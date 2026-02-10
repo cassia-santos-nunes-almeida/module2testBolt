@@ -8,6 +8,22 @@ interface Message {
   content: string;
 }
 
+const SYSTEM_INSTRUCTION = `You are a rigorous engineering tutor specializing in circuit analysis. Your role is to help students understand:
+- Component physics (resistors, capacitors, inductors)
+- Constitutive laws: V=IR, I=C(dV/dt), V=L(dI/dt)
+- Time-domain differential equations for RC, RL, and RLC circuits
+- Laplace transforms and their application to circuit analysis
+- s-domain transfer functions, poles, and zeros
+- Damping ratios, natural frequency, and transient response
+
+Guidelines:
+1. Use LaTeX notation for all mathematical expressions. Enclose inline math in single $ signs and display math in double $$ signs.
+2. Provide detailed, step-by-step explanations to promote deep learning.
+3. Connect physical intuition with mathematical rigor.
+4. Only answer questions related to circuit analysis and electromagnetics.
+5. If asked about unrelated topics, politely redirect to circuit theory.
+6. Use proper engineering terminology and reference Nilsson & Riedel principles when appropriate.`;
+
 export function AiTutor() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -16,6 +32,7 @@ export function AiTutor() {
   const [isApiKeySet, setIsApiKeySet] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<ReturnType<ReturnType<GoogleGenerativeAI['getGenerativeModel']>['startChat']> | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -27,6 +44,12 @@ export function AiTutor() {
 
   const handleSetApiKey = () => {
     if (apiKey.trim()) {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash',
+        systemInstruction: SYSTEM_INSTRUCTION,
+      });
+      chatRef.current = model.startChat();
       setIsApiKeySet(true);
       setMessages([
         {
@@ -69,28 +92,11 @@ export function AiTutor() {
     setIsLoading(true);
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      if (!chatRef.current) {
+        throw new Error('Chat session not initialized');
+      }
 
-      const systemPrompt = `You are a rigorous engineering tutor specializing in circuit analysis. Your role is to help students understand:
-- Component physics (resistors, capacitors, inductors)
-- Constitutive laws: V=IR, I=C(dV/dt), V=L(dI/dt)
-- Time-domain differential equations for RC, RL, and RLC circuits
-- Laplace transforms and their application to circuit analysis
-- s-domain transfer functions, poles, and zeros
-- Damping ratios, natural frequency, and transient response
-
-Guidelines:
-1. Use LaTeX notation for all mathematical expressions. Enclose inline math in single $ signs and display math in double $$ signs.
-2. Provide detailed, step-by-step explanations to promote deep learning.
-3. Connect physical intuition with mathematical rigor.
-4. Only answer questions related to circuit analysis and electromagnetics.
-5. If asked about unrelated topics, politely redirect to circuit theory.
-6. Use proper engineering terminology and reference Nilsson & Riedel principles when appropriate.
-
-Question: ${userMessage}`;
-
-      const result = await model.generateContent(systemPrompt);
+      const result = await chatRef.current.sendMessage(userMessage);
       const response = await result.response;
       const text = response.text();
 
@@ -154,7 +160,7 @@ Question: ${userMessage}`;
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="Paste your Gemini API key"
             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-engineering-blue-500"
-            onKeyPress={(e) => e.key === 'Enter' && handleSetApiKey()}
+            onKeyDown={(e) => e.key === 'Enter' && handleSetApiKey()}
           />
           <button
             onClick={handleSetApiKey}
@@ -217,7 +223,7 @@ Question: ${userMessage}`;
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Ask about circuits..."
                 className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-engineering-blue-500 text-sm"
                 disabled={isLoading}
