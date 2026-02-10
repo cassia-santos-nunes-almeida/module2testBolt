@@ -1,17 +1,20 @@
+import { useState } from 'react';
 import { MathWrapper } from '../common/MathWrapper';
 import { laplaceTransforms, laplaceProperties } from '../../utils/componentMath';
-import { BookOpen, Zap as ZapIcon, ArrowRightLeft } from 'lucide-react';
+import { BookOpen, Zap as ZapIcon, ArrowRightLeft, Table2 } from 'lucide-react';
 
-export function LaplaceTheory() {
+type TabId = 'theory' | 'tables' | 'examples';
+
+const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
+  { id: 'theory', label: 'Theory & Why Use', icon: <BookOpen className="w-4 h-4" /> },
+  { id: 'tables', label: 'Tables & Properties', icon: <Table2 className="w-4 h-4" /> },
+  { id: 'examples', label: 'Worked Examples', icon: <ArrowRightLeft className="w-4 h-4" /> },
+];
+
+function TheoryTab() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Laplace Transform Theory</h1>
-        <p className="text-lg text-slate-600">
-          Mathematical foundation for s-domain circuit analysis
-        </p>
-      </div>
-
+    <div className="space-y-6">
+      {/* Definition */}
       <section className="bg-white rounded-lg shadow-md p-6">
         <div className="flex items-start gap-3 mb-4">
           <BookOpen className="w-6 h-6 text-engineering-blue-600 mt-1" />
@@ -36,13 +39,14 @@ export function LaplaceTheory() {
         </div>
       </section>
 
+      {/* Why Use */}
       <section className="bg-white rounded-lg shadow-md p-6">
         <div className="flex items-start gap-3 mb-4">
           <ZapIcon className="w-6 h-6 text-amber-600 mt-1" />
           <h2 className="text-2xl font-semibold text-slate-900">Why Use Laplace Transforms?</h2>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-3 gap-4 mb-6">
           <div className="bg-gradient-to-br from-green-50 to-white p-4 rounded-lg border border-green-200">
             <h4 className="font-semibold text-green-900 mb-2">1. Simplification</h4>
             <p className="text-sm text-slate-700">
@@ -64,8 +68,75 @@ export function LaplaceTheory() {
             </p>
           </div>
         </div>
+
+        {/* Process flow diagram */}
+        <div className="bg-slate-50 rounded-lg p-5 border border-slate-200">
+          <h4 className="font-semibold text-slate-800 mb-4 text-center">The Laplace Transform Process</h4>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <div className="bg-blue-100 border border-blue-300 rounded-lg px-4 py-2 text-center">
+              <p className="text-xs text-blue-600 font-medium">Time Domain</p>
+              <p className="text-sm font-semibold text-blue-900">Differential Eq.</p>
+            </div>
+            <div className="text-slate-400 font-bold text-lg">&rarr;</div>
+            <div className="bg-green-100 border border-green-300 rounded-lg px-4 py-2 text-center">
+              <p className="text-xs text-green-600 font-medium">Laplace Transform</p>
+              <p className="text-sm font-semibold text-green-900">Algebraic Eq.</p>
+            </div>
+            <div className="text-slate-400 font-bold text-lg">&rarr;</div>
+            <div className="bg-purple-100 border border-purple-300 rounded-lg px-4 py-2 text-center">
+              <p className="text-xs text-purple-600 font-medium">Solve in s-domain</p>
+              <p className="text-sm font-semibold text-purple-900">Y(s)</p>
+            </div>
+            <div className="text-slate-400 font-bold text-lg">&rarr;</div>
+            <div className="bg-amber-100 border border-amber-300 rounded-lg px-4 py-2 text-center">
+              <p className="text-xs text-amber-600 font-medium">Inverse Transform</p>
+              <p className="text-sm font-semibold text-amber-900">y(t) Solution</p>
+            </div>
+          </div>
+        </div>
       </section>
 
+      {/* Key Insights */}
+      <section className="bg-amber-50 rounded-lg shadow-md p-6 border-l-4 border-amber-500">
+        <h3 className="text-xl font-semibold text-amber-900 mb-3">Key Insights</h3>
+        <ul className="space-y-2 text-slate-700">
+          <li className="flex items-start gap-2">
+            <span className="text-amber-600 font-bold mt-1">&bull;</span>
+            <span>
+              The Laplace transform is a powerful tool that converts calculus problems (differentiation,
+              integration) into algebra problems (multiplication, division).
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-600 font-bold mt-1">&bull;</span>
+            <span>
+              Initial conditions are automatically incorporated through the differentiation property.
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-600 font-bold mt-1">&bull;</span>
+            <span>
+              The inverse transform often requires partial fraction decomposition to match standard
+              transform pairs.
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-600 font-bold mt-1">&bull;</span>
+            <span>
+              For circuit analysis, the s-domain representation provides deep insight into system
+              behavior through pole and zero locations.
+            </span>
+          </li>
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+function TablesTab() {
+  return (
+    <div className="space-y-6">
+      {/* Transform Pairs Table */}
       <section className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-semibold text-slate-900 mb-4">
           Common Laplace Transform Pairs
@@ -74,15 +145,17 @@ export function LaplaceTheory() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-slate-100">
-                <th className="border border-slate-300 px-4 py-3 text-left">Time Domain f(t)</th>
-                <th className="border border-slate-300 px-4 py-3 text-left">S-Domain F(s)</th>
-                <th className="border border-slate-300 px-4 py-3 text-left">Description</th>
+              <tr className="bg-engineering-blue-50">
+                <th className="border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-800">#</th>
+                <th className="border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-800">Time Domain f(t)</th>
+                <th className="border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-800">S-Domain F(s)</th>
+                <th className="border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-800">Description</th>
               </tr>
             </thead>
             <tbody>
               {laplaceTransforms.map((transform, index) => (
-                <tr key={index} className="hover:bg-slate-50">
+                <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                  <td className="border border-slate-300 px-4 py-3 text-sm text-slate-500 font-mono">{index + 1}</td>
                   <td className="border border-slate-300 px-4 py-3">
                     <MathWrapper formula={transform.function} />
                   </td>
@@ -99,21 +172,53 @@ export function LaplaceTheory() {
         </div>
       </section>
 
+      {/* Important Properties as a proper table */}
       <section className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-semibold text-slate-900 mb-4">
           Important Properties
         </h2>
 
-        <div className="space-y-4">
-          {laplaceProperties.map((property, index) => (
-            <div key={index} className="bg-slate-50 p-4 rounded-lg border-l-4 border-engineering-blue-500">
-              <h4 className="font-semibold text-slate-800 mb-2">{property.property}</h4>
-              <MathWrapper formula={property.formula} block />
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-engineering-blue-50">
+                <th className="border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-800">#</th>
+                <th className="border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-800">Property</th>
+                <th className="border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-800">Formula</th>
+              </tr>
+            </thead>
+            <tbody>
+              {laplaceProperties.map((property, index) => (
+                <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                  <td className="border border-slate-300 px-4 py-3 text-sm text-slate-500 font-mono">{index + 1}</td>
+                  <td className="border border-slate-300 px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">
+                    {property.property}
+                  </td>
+                  <td className="border border-slate-300 px-4 py-3">
+                    <MathWrapper formula={property.formula} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
+      {/* Quick-reference tip */}
+      <div className="bg-engineering-blue-50 rounded-lg p-4 border-l-4 border-engineering-blue-500">
+        <p className="text-sm text-slate-700">
+          <span className="font-semibold">Tip:</span> When solving circuit problems, first convert all
+          components to their s-domain equivalents using the impedance formulas, then use these transform
+          pairs and properties to move between domains.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ExamplesTab() {
+  return (
+    <div className="space-y-6">
       <section className="bg-white rounded-lg shadow-md p-6">
         <div className="flex items-start gap-3 mb-4">
           <ArrowRightLeft className="w-6 h-6 text-green-600 mt-1" />
@@ -215,39 +320,44 @@ export function LaplaceTheory() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
 
-      <section className="bg-amber-50 rounded-lg shadow-md p-6 border-l-4 border-amber-500">
-        <h3 className="text-xl font-semibold text-amber-900 mb-3">Key Insights</h3>
-        <ul className="space-y-2 text-slate-700">
-          <li className="flex items-start gap-2">
-            <span className="text-amber-600 font-bold mt-1">•</span>
-            <span>
-              The Laplace transform is a powerful tool that converts calculus problems (differentiation,
-              integration) into algebra problems (multiplication, division).
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-amber-600 font-bold mt-1">•</span>
-            <span>
-              Initial conditions are automatically incorporated through the differentiation property.
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-amber-600 font-bold mt-1">•</span>
-            <span>
-              The inverse transform often requires partial fraction decomposition to match standard
-              transform pairs.
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-amber-600 font-bold mt-1">•</span>
-            <span>
-              For circuit analysis, the s-domain representation provides deep insight into system
-              behavior through pole and zero locations.
-            </span>
-          </li>
-        </ul>
-      </section>
+export function LaplaceTheory() {
+  const [activeTab, setActiveTab] = useState<TabId>('theory');
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-4xl font-bold text-slate-900 mb-2">Laplace Transform Theory</h1>
+        <p className="text-lg text-slate-600">
+          Mathematical foundation for s-domain circuit analysis
+        </p>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex border-b-2 border-slate-200">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-6 py-3 font-semibold text-sm transition-colors border-b-3 -mb-[2px] ${
+              activeTab === tab.id
+                ? 'border-engineering-blue-600 text-engineering-blue-700 bg-engineering-blue-50'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === 'theory' && <TheoryTab />}
+      {activeTab === 'tables' && <TablesTab />}
+      {activeTab === 'examples' && <ExamplesTab />}
     </div>
   );
 }
