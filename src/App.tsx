@@ -16,7 +16,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="/component-physics" element={<ComponentPhysics />} />
-            <Route path="/time-domain" element={<TimeDomain />} />
+            <Route path="/circuit-analysis" element={<TimeDomain />} />
             <Route path="/laplace-theory" element={<LaplaceTheory />} />
             <Route path="/s-domain" element={<SDomainAnalysis />} />
             <Route path="/interactive-lab" element={<InteractiveLab />} />

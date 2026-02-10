@@ -12,7 +12,7 @@ import { cn } from '../../utils/cn';
 const navigationLinks = [
   { to: '/', icon: Home, label: 'Overview' },
   { to: '/component-physics', icon: Zap, label: 'Component Physics' },
-  { to: '/time-domain', icon: Clock, label: 'Time Domain' },
+  { to: '/circuit-analysis', icon: Clock, label: 'Circuit Analysis' },
   { to: '/laplace-theory', icon: FunctionSquare, label: 'Laplace Theory' },
   { to: '/s-domain', icon: GitBranch, label: 'S-Domain Analysis' },
   { to: '/interactive-lab', icon: FlaskConical, label: 'Interactive Lab' },
