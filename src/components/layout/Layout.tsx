@@ -17,16 +17,18 @@ export function Layout({ children }: LayoutProps) {
         <div className="max-w-7xl mx-auto p-8">
           {children}
         </div>
-        {!isTutorOpen && (
-          <button
-            onClick={() => setIsTutorOpen(true)}
-            className="fixed bottom-6 right-6 bg-engineering-blue-600 hover:bg-engineering-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110 z-50"
-            aria-label="Open AI Tutor"
-          >
-            <MessageSquare className="w-6 h-6" />
-          </button>
-        )}
       </main>
+      {!isTutorOpen && (
+        <button
+          onClick={() => setIsTutorOpen(true)}
+          className="flex items-center gap-2 px-3 py-4 bg-engineering-blue-600 hover:bg-engineering-blue-700 text-white writing-mode-vertical rounded-l-lg shadow-lg transition-colors z-50 shrink-0 self-center"
+          style={{ writingMode: 'vertical-rl' }}
+          aria-label="Open AI Tutor"
+        >
+          <MessageSquare className="w-5 h-5" />
+          <span className="text-sm font-semibold tracking-wide">AI Circuit Tutor</span>
+        </button>
+      )}
       <AiTutor isOpen={isTutorOpen} onToggle={() => setIsTutorOpen(false)} />
     </div>
   );
