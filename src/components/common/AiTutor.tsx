@@ -1,11 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Key } from 'lucide-react';
+import { MessageSquare, X, Send, Key, PanelRightOpen } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { MathWrapper } from './MathWrapper';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+}
+
+interface AiTutorProps {
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
 const SYSTEM_INSTRUCTION = `You are a rigorous engineering tutor specializing in circuit analysis. Your role is to help students understand:
@@ -24,8 +29,7 @@ Guidelines:
 5. If asked about unrelated topics, politely redirect to circuit theory.
 6. Use proper engineering terminology and reference Nilsson & Riedel principles when appropriate.`;
 
-export function AiTutor() {
-  const [isOpen, setIsOpen] = useState(false);
+export function AiTutor({ isOpen, onToggle }: AiTutorProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -112,30 +116,22 @@ export function AiTutor() {
   };
 
   if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-engineering-blue-600 hover:bg-engineering-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110 z-50"
-        aria-label="Open AI Tutor"
-      >
-        <MessageSquare className="w-6 h-6" />
-      </button>
-    );
+    return null;
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white rounded-lg shadow-2xl flex flex-col z-50 border border-slate-200">
-      <div className="bg-engineering-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+    <aside className="w-96 h-screen bg-white border-l border-slate-200 flex flex-col shrink-0">
+      <div className="bg-engineering-blue-600 text-white p-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5" />
           <h3 className="font-semibold">AI Circuit Tutor</h3>
         </div>
         <button
-          onClick={() => setIsOpen(false)}
+          onClick={onToggle}
           className="hover:bg-engineering-blue-700 p-1 rounded"
-          aria-label="Close"
+          aria-label="Close tutor panel"
         >
-          <X className="w-5 h-5" />
+          <PanelRightOpen className="w-5 h-5" />
         </button>
       </div>
 
@@ -240,6 +236,6 @@ export function AiTutor() {
           </div>
         </>
       )}
-    </div>
+    </aside>
   );
 }
