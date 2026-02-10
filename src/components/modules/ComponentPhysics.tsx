@@ -176,23 +176,70 @@ function ResistorSection({
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Visual Representation</h3>
 
           <div className="bg-slate-50 p-6 rounded-lg mb-6">
-            <svg viewBox="0 0 400 200" className="w-full">
-              <rect x="50" y="80" width={length * 150} height={Math.sqrt(area * 1e6) * 40} fill="#d97706" stroke="#92400e" strokeWidth="2" />
-
-              <line x1="20" y1="100" x2="50" y2="100" stroke="#1e40af" strokeWidth="3" />
-              <line x1={50 + length * 150} y1="100" x2={50 + length * 150 + 30} y2="100" stroke="#1e40af" strokeWidth="3" />
-
-              <line x1="50" y1="60" x2={50 + length * 150} y2="60" stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowhead)" />
-              <text x={50 + (length * 150) / 2} y="50" textAnchor="middle" className="text-xs fill-slate-600">Length (L)</text>
-
-              <line x1="30" y1="80" x2="30" y2={80 + Math.sqrt(area * 1e6) * 40} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowhead)" />
-              <text x="15" y={80 + (Math.sqrt(area * 1e6) * 40) / 2} textAnchor="middle" className="text-xs fill-slate-600">A</text>
-
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Physical Structure</p>
+            <svg viewBox="0 0 400 180" className="w-full">
               <defs>
                 <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
                   <polygon points="0 0, 10 5, 0 10" fill="#64748b" />
                 </marker>
+                <linearGradient id="resistorBody" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#fbbf24" />
+                  <stop offset="50%" stopColor="#d97706" />
+                  <stop offset="100%" stopColor="#b45309" />
+                </linearGradient>
               </defs>
+
+              {/* Wire leads */}
+              <line x1="20" y1="90" x2="80" y2="90" stroke="#1e40af" strokeWidth="3" />
+              <line x1={80 + length * 120} y1="90" x2={80 + length * 120 + 60} y2="90" stroke="#1e40af" strokeWidth="3" />
+
+              {/* Resistor body - rounded rectangle */}
+              {(() => {
+                const h = Math.max(Math.sqrt(area * 1e6) * 35, 24);
+                const w = length * 120;
+                return (
+                  <>
+                    <rect x="80" y={90 - h / 2} width={w} height={h} rx="6" ry="6" fill="url(#resistorBody)" stroke="#92400e" strokeWidth="2" />
+                    {/* Color bands */}
+                    <rect x={80 + w * 0.15} y={90 - h / 2 + 2} width={w * 0.06} height={h - 4} rx="1" fill="#b91c1c" opacity="0.8" />
+                    <rect x={80 + w * 0.28} y={90 - h / 2 + 2} width={w * 0.06} height={h - 4} rx="1" fill="#7c3aed" opacity="0.8" />
+                    <rect x={80 + w * 0.41} y={90 - h / 2 + 2} width={w * 0.06} height={h - 4} rx="1" fill="#b45309" opacity="0.8" />
+                    <rect x={80 + w * 0.70} y={90 - h / 2 + 2} width={w * 0.06} height={h - 4} rx="1" fill="#d4af37" opacity="0.8" />
+
+                    {/* Length dimension line */}
+                    <line x1="80" y1={90 - h / 2 - 14} x2={80 + w} y2={90 - h / 2 - 14} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowhead)" />
+                    <line x1="80" y1={90 - h / 2 - 20} x2="80" y2={90 - h / 2 - 8} stroke="#64748b" strokeWidth="0.5" />
+                    <line x1={80 + w} y1={90 - h / 2 - 20} x2={80 + w} y2={90 - h / 2 - 8} stroke="#64748b" strokeWidth="0.5" />
+                    <text x={80 + w / 2} y={90 - h / 2 - 22} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">L</text>
+
+                    {/* Area dimension */}
+                    <line x1={80 + w + 70} y1={90 - h / 2} x2={80 + w + 70} y2={90 + h / 2} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowhead)" />
+                    <line x1={80 + w + 64} y1={90 - h / 2} x2={80 + w + 76} y2={90 - h / 2} stroke="#64748b" strokeWidth="0.5" />
+                    <line x1={80 + w + 64} y1={90 + h / 2} x2={80 + w + 76} y2={90 + h / 2} stroke="#64748b" strokeWidth="0.5" />
+                    <text x={80 + w + 82} y={93} textAnchor="start" className="text-xs fill-slate-600" fontStyle="italic">A</text>
+                  </>
+                );
+              })()}
+
+              {/* Current arrow */}
+              <line x1="30" y1="130" x2="65" y2="130" stroke="#dc2626" strokeWidth="2" markerEnd="url(#arrowRed)" />
+              <text x="48" y="148" textAnchor="middle" className="text-xs fill-red-600" fontStyle="italic">i</text>
+              <defs>
+                <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                  <polygon points="0 1, 8 4, 0 7" fill="#dc2626" />
+                </marker>
+              </defs>
+            </svg>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-lg mb-6">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Circuit Symbol</p>
+            <svg viewBox="0 0 280 60" className="w-full max-w-xs mx-auto">
+              {/* Zigzag resistor symbol */}
+              <line x1="20" y1="30" x2="60" y2="30" stroke="#1e40af" strokeWidth="2.5" />
+              <polyline points="60,30 72,10 96,50 120,10 144,50 168,10 192,50 204,30" fill="none" stroke="#1e40af" strokeWidth="2.5" strokeLinejoin="round" />
+              <line x1="204" y1="30" x2="260" y2="30" stroke="#1e40af" strokeWidth="2.5" />
+              <text x="132" y="8" textAnchor="middle" className="text-xs fill-slate-700 font-semibold">R</text>
             </svg>
           </div>
 
@@ -338,28 +385,96 @@ function CapacitorSection({
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Visual Representation</h3>
 
           <div className="bg-slate-50 p-6 rounded-lg mb-6">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Physical Structure</p>
             <svg viewBox="0 0 400 200" className="w-full">
-              <rect x="150" y="50" width="10" height={Math.sqrt(area) * 80} fill="#3b82f6" stroke="#1e40af" strokeWidth="2" />
-              <rect x={150 + distance * 500} y="50" width="10" height={Math.sqrt(area) * 80} fill="#3b82f6" stroke="#1e40af" strokeWidth="2" />
+              <defs>
+                <marker id="arrowCapDim" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                  <polygon points="0 1, 8 4, 0 7" fill="#64748b" />
+                </marker>
+                <linearGradient id="plateFill" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#60a5fa" />
+                  <stop offset="100%" stopColor="#2563eb" />
+                </linearGradient>
+              </defs>
 
-              <rect x="160" y="50" width={distance * 500} height={Math.sqrt(area) * 80} fill="#dbeafe" opacity="0.5" />
+              {(() => {
+                const plateH = Math.max(Math.sqrt(area) * 80, 50);
+                const gap = Math.max(distance * 400, 30);
+                const plateX1 = 160;
+                const plateX2 = plateX1 + gap;
+                const cy = 100;
 
-              <line x1="165" y1="140" x2={150 + distance * 500} y2="140" stroke="#64748b" strokeWidth="1" strokeDasharray="5,5" />
-              <text x={165 + (distance * 500) / 2} y="160" textAnchor="middle" className="text-xs fill-slate-600">
-                Distance (d)
-              </text>
+                return (
+                  <>
+                    {/* Wire leads */}
+                    <line x1="60" y1={cy} x2={plateX1} y2={cy} stroke="#1e40af" strokeWidth="3" />
+                    <line x1={plateX2 + 12} y1={cy} x2="360" y2={cy} stroke="#1e40af" strokeWidth="3" />
 
-              <line x1="120" y1="50" x2="120" y2={50 + Math.sqrt(area) * 80} stroke="#64748b" strokeWidth="1" />
-              <text x="100" y={50 + (Math.sqrt(area) * 80) / 2} textAnchor="middle" className="text-xs fill-slate-600">
-                Area
-              </text>
+                    {/* Plates */}
+                    <rect x={plateX1 - 12} y={cy - plateH / 2} width="12" height={plateH} rx="2" fill="url(#plateFill)" stroke="#1e40af" strokeWidth="1.5" />
+                    <rect x={plateX2} y={cy - plateH / 2} width="12" height={plateH} rx="2" fill="url(#plateFill)" stroke="#1e40af" strokeWidth="1.5" />
 
-              <text x="165" y="35" textAnchor="middle" className="text-xs fill-slate-600 font-semibold">
-                + + + +
-              </text>
-              <text x={165 + distance * 500} y="35" textAnchor="middle" className="text-xs fill-slate-600 font-semibold">
-                - - - -
-              </text>
+                    {/* Dielectric fill between plates */}
+                    <rect x={plateX1} y={cy - plateH / 2} width={gap} height={plateH} fill="#fef3c7" opacity="0.6" />
+
+                    {/* Electric field arrows between plates */}
+                    {[-2, -1, 0, 1, 2].map((offset) => (
+                      <line
+                        key={offset}
+                        x1={plateX1 + 4}
+                        y1={cy + offset * (plateH / 6)}
+                        x2={plateX2 - 2}
+                        y2={cy + offset * (plateH / 6)}
+                        stroke="#dc2626"
+                        strokeWidth="1"
+                        strokeDasharray="4,3"
+                        markerEnd="url(#arrowEField)"
+                      />
+                    ))}
+
+                    {/* Charge symbols */}
+                    {[-2, -1, 0, 1, 2].map((offset) => (
+                      <g key={`charge-${offset}`}>
+                        <text x={plateX1 - 18} y={cy + offset * (plateH / 6) + 4} textAnchor="middle" className="text-xs font-bold" fill="#2563eb">+</text>
+                        <text x={plateX2 + 18} y={cy + offset * (plateH / 6) + 4} textAnchor="middle" className="text-xs font-bold" fill="#2563eb">&minus;</text>
+                      </g>
+                    ))}
+
+                    {/* Dimension: distance (d) */}
+                    <line x1={plateX1} y1={cy + plateH / 2 + 16} x2={plateX2 + 12} y2={cy + plateH / 2 + 16} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowCapDim)" />
+                    <line x1={plateX1} y1={cy + plateH / 2 + 10} x2={plateX1} y2={cy + plateH / 2 + 22} stroke="#64748b" strokeWidth="0.5" />
+                    <line x1={plateX2 + 12} y1={cy + plateH / 2 + 10} x2={plateX2 + 12} y2={cy + plateH / 2 + 22} stroke="#64748b" strokeWidth="0.5" />
+                    <text x={(plateX1 + plateX2 + 12) / 2} y={cy + plateH / 2 + 32} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">d</text>
+
+                    {/* Dimension: area */}
+                    <line x1={plateX1 - 30} y1={cy - plateH / 2} x2={plateX1 - 30} y2={cy + plateH / 2} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowCapDim)" />
+                    <line x1={plateX1 - 36} y1={cy - plateH / 2} x2={plateX1 - 24} y2={cy - plateH / 2} stroke="#64748b" strokeWidth="0.5" />
+                    <line x1={plateX1 - 36} y1={cy + plateH / 2} x2={plateX1 - 24} y2={cy + plateH / 2} stroke="#64748b" strokeWidth="0.5" />
+                    <text x={plateX1 - 42} y={cy + 4} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">A</text>
+
+                    {/* E-field label */}
+                    <text x={(plateX1 + plateX2) / 2 + 6} y={cy - plateH / 2 + 14} textAnchor="middle" className="text-xs fill-red-500 font-medium">E field</text>
+                  </>
+                );
+              })()}
+
+              <defs>
+                <marker id="arrowEField" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <polygon points="0 0.5, 6 3, 0 5.5" fill="#dc2626" />
+                </marker>
+              </defs>
+            </svg>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-lg mb-6">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Circuit Symbol</p>
+            <svg viewBox="0 0 280 60" className="w-full max-w-xs mx-auto">
+              {/* Standard capacitor symbol - two parallel lines */}
+              <line x1="20" y1="30" x2="120" y2="30" stroke="#1e40af" strokeWidth="2.5" />
+              <line x1="120" y1="8" x2="120" y2="52" stroke="#1e40af" strokeWidth="3" />
+              <line x1="136" y1="8" x2="136" y2="52" stroke="#1e40af" strokeWidth="3" />
+              <line x1="136" y1="30" x2="260" y2="30" stroke="#1e40af" strokeWidth="2.5" />
+              <text x="128" y="6" textAnchor="middle" className="text-xs fill-slate-700 font-semibold">C</text>
             </svg>
           </div>
 
@@ -519,7 +634,18 @@ function InductorSection({
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Visual Representation</h3>
 
           <div className="bg-slate-50 p-6 rounded-lg mb-6">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Physical Structure</p>
             <svg viewBox="0 0 400 200" className="w-full">
+              <defs>
+                <marker id="arrowIndDim" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                  <polygon points="0 1, 8 4, 0 7" fill="#64748b" />
+                </marker>
+              </defs>
+
+              {/* Wire leads */}
+              <line x1="40" y1="100" x2="95" y2="100" stroke="#1e40af" strokeWidth="3" />
+              <line x1={105 + length * 500} y1="100" x2={105 + length * 500 + 55} y2="100" stroke="#1e40af" strokeWidth="3" />
+
               {Array.from({ length: Math.min(turns, 20) }).map((_, i) => {
                 const x = 100 + (i * length * 500) / Math.min(turns, 20);
                 return (
@@ -536,19 +662,39 @@ function InductorSection({
                 );
               })}
 
-              <line x1="100" y1="30" x2={100 + length * 500} y2="30" stroke="#64748b" strokeWidth="1" strokeDasharray="5,5" />
-              <text x={100 + (length * 500) / 2} y="20" textAnchor="middle" className="text-xs fill-slate-600">
-                Length (l)
-              </text>
+              {/* Length dimension */}
+              {(() => {
+                const coilR = Math.sqrt(area * 1000) * 40;
+                return (
+                  <>
+                    <line x1="100" y1={100 - coilR - 14} x2={100 + length * 500} y2={100 - coilR - 14} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowIndDim)" />
+                    <line x1="100" y1={100 - coilR - 20} x2="100" y2={100 - coilR - 8} stroke="#64748b" strokeWidth="0.5" />
+                    <line x1={100 + length * 500} y1={100 - coilR - 20} x2={100 + length * 500} y2={100 - coilR - 8} stroke="#64748b" strokeWidth="0.5" />
+                    <text x={100 + (length * 500) / 2} y={100 - coilR - 22} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">l</text>
 
-              <line x1="70" y1={100 - Math.sqrt(area * 1000) * 40} x2="70" y2={100 + Math.sqrt(area * 1000) * 40} stroke="#64748b" strokeWidth="1" />
-              <text x="50" y="100" textAnchor="middle" className="text-xs fill-slate-600">
-                Area
-              </text>
+                    {/* Area dimension */}
+                    <line x1="70" y1={100 - coilR} x2="70" y2={100 + coilR} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowIndDim)" />
+                    <line x1="64" y1={100 - coilR} x2="76" y2={100 - coilR} stroke="#64748b" strokeWidth="0.5" />
+                    <line x1="64" y1={100 + coilR} x2="76" y2={100 + coilR} stroke="#64748b" strokeWidth="0.5" />
+                    <text x="52" y="103" textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">A</text>
+                  </>
+                );
+              })()}
             </svg>
             <p className="text-center text-xs text-slate-600 mt-2">
               Number of turns: {turns} {turns > 20 && '(showing 20)'}
             </p>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-lg mb-6">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Circuit Symbol</p>
+            <svg viewBox="0 0 280 60" className="w-full max-w-xs mx-auto">
+              {/* Standard inductor symbol - series of bumps/arcs */}
+              <line x1="20" y1="35" x2="60" y2="35" stroke="#059669" strokeWidth="2.5" />
+              <path d="M60,35 C60,15 80,15 80,35 C80,15 100,15 100,35 C100,15 120,15 120,35 C120,15 140,15 140,35 C140,15 160,15 160,35 C160,15 180,15 180,35" fill="none" stroke="#059669" strokeWidth="2.5" />
+              <line x1="180" y1="35" x2="260" y2="35" stroke="#059669" strokeWidth="2.5" />
+              <text x="120" y="12" textAnchor="middle" className="text-xs fill-slate-700 font-semibold">L</text>
+            </svg>
           </div>
 
           <div className="space-y-4">
