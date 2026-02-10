@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Key } from 'lucide-react';
+import { MessageSquare, X, Send, Key, PanelRightOpen } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { MathWrapper } from './MathWrapper';
 
@@ -8,14 +8,35 @@ interface Message {
   content: string;
 }
 
-export function AiTutor() {
-  const [isOpen, setIsOpen] = useState(false);
+interface AiTutorProps {
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+const SYSTEM_INSTRUCTION = `You are a rigorous engineering tutor specializing in circuit analysis. Your role is to help students understand:
+- Component physics (resistors, capacitors, inductors)
+- Constitutive laws: V=IR, I=C(dV/dt), V=L(dI/dt)
+- Time-domain differential equations for RC, RL, and RLC circuits
+- Laplace transforms and their application to circuit analysis
+- s-domain transfer functions, poles, and zeros
+- Damping ratios, natural frequency, and transient response
+
+Guidelines:
+1. Use LaTeX notation for all mathematical expressions. Enclose inline math in single $ signs and display math in double $$ signs.
+2. Provide detailed, step-by-step explanations to promote deep learning.
+3. Connect physical intuition with mathematical rigor.
+4. Only answer questions related to circuit analysis and electromagnetics.
+5. If asked about unrelated topics, politely redirect to circuit theory.
+6. Use proper engineering terminology and reference Nilsson & Riedel principles when appropriate.`;
+
+export function AiTutor({ isOpen, onToggle }: AiTutorProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [isApiKeySet, setIsApiKeySet] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<ReturnType<ReturnType<GoogleGenerativeAI['getGenerativeModel']>['startChat']> | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -27,6 +48,12 @@ export function AiTutor() {
 
   const handleSetApiKey = () => {
     if (apiKey.trim()) {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash',
+        systemInstruction: SYSTEM_INSTRUCTION,
+      });
+      chatRef.current = model.startChat();
       setIsApiKeySet(true);
       setMessages([
         {
@@ -69,28 +96,11 @@ export function AiTutor() {
     setIsLoading(true);
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      if (!chatRef.current) {
+        throw new Error('Chat session not initialized');
+      }
 
-      const systemPrompt = `You are a rigorous engineering tutor specializing in circuit analysis. Your role is to help students understand:
-- Component physics (resistors, capacitors, inductors)
-- Constitutive laws: V=IR, I=C(dV/dt), V=L(dI/dt)
-- Time-domain differential equations for RC, RL, and RLC circuits
-- Laplace transforms and their application to circuit analysis
-- s-domain transfer functions, poles, and zeros
-- Damping ratios, natural frequency, and transient response
-
-Guidelines:
-1. Use LaTeX notation for all mathematical expressions. Enclose inline math in single $ signs and display math in double $$ signs.
-2. Provide detailed, step-by-step explanations to promote deep learning.
-3. Connect physical intuition with mathematical rigor.
-4. Only answer questions related to circuit analysis and electromagnetics.
-5. If asked about unrelated topics, politely redirect to circuit theory.
-6. Use proper engineering terminology and reference Nilsson & Riedel principles when appropriate.
-
-Question: ${userMessage}`;
-
-      const result = await model.generateContent(systemPrompt);
+      const result = await chatRef.current.sendMessage(userMessage);
       const response = await result.response;
       const text = response.text();
 
@@ -106,30 +116,22 @@ Question: ${userMessage}`;
   };
 
   if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-engineering-blue-600 hover:bg-engineering-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110 z-50"
-        aria-label="Open AI Tutor"
-      >
-        <MessageSquare className="w-6 h-6" />
-      </button>
-    );
+    return null;
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white rounded-lg shadow-2xl flex flex-col z-50 border border-slate-200">
-      <div className="bg-engineering-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+    <aside className="w-96 h-screen bg-white border-l border-slate-200 flex flex-col shrink-0">
+      <div className="bg-engineering-blue-600 text-white p-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5" />
           <h3 className="font-semibold">AI Circuit Tutor</h3>
         </div>
         <button
-          onClick={() => setIsOpen(false)}
+          onClick={onToggle}
           className="hover:bg-engineering-blue-700 p-1 rounded"
-          aria-label="Close"
+          aria-label="Close tutor panel"
         >
-          <X className="w-5 h-5" />
+          <PanelRightOpen className="w-5 h-5" />
         </button>
       </div>
 
@@ -154,7 +156,7 @@ Question: ${userMessage}`;
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="Paste your Gemini API key"
             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-engineering-blue-500"
-            onKeyPress={(e) => e.key === 'Enter' && handleSetApiKey()}
+            onKeyDown={(e) => e.key === 'Enter' && handleSetApiKey()}
           />
           <button
             onClick={handleSetApiKey}
@@ -217,7 +219,7 @@ Question: ${userMessage}`;
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Ask about circuits..."
                 className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-engineering-blue-500 text-sm"
                 disabled={isLoading}
@@ -234,6 +236,6 @@ Question: ${userMessage}`;
           </div>
         </>
       )}
-    </div>
+    </aside>
   );
 }
