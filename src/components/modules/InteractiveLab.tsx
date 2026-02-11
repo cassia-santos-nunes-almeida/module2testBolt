@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { RotateCcw } from 'lucide-react';
 import { calculateCircuitResponse, type CircuitType, type InputType } from '../../utils/circuitSolver';
 import { MathWrapper } from '../common/MathWrapper';
@@ -110,18 +110,42 @@ export function InteractiveLab() {
   const [C, setC] = useState(0.0001);
   const [voltage, setVoltage] = useState(10);
   const [duration, setDuration] = useState(0.01);
+  const [autoDuration, setAutoDuration] = useState(false);
   const [showCurrent, setShowCurrent] = useState(true);
   const [showVoltage, setShowVoltage] = useState(true);
+
+  // Compute the time constant for the current circuit
+  const timeConstant = useMemo(() => {
+    if (circuitType === 'RC') return R * C;
+    if (circuitType === 'RL') return L / R;
+    // RLC: envelope time constant = 1/alpha
+    return (2 * L) / R;
+  }, [circuitType, R, L, C]);
+
+  // R_crit for RLC: R = 2*sqrt(L/C)
+  const rCrit = useMemo(() => {
+    if (circuitType === 'RLC') return 2 * Math.sqrt(L / C);
+    return null;
+  }, [circuitType, L, C]);
+
+  // Auto-duration: 5*tau, clamped to [1ms, 100ms]
+  const effectiveDuration = useMemo(() => {
+    if (autoDuration) {
+      const auto = Math.max(0.001, Math.min(0.1, 5 * timeConstant));
+      return auto;
+    }
+    return duration;
+  }, [autoDuration, timeConstant, duration]);
 
   const response = useMemo(() => {
     return calculateCircuitResponse(
       circuitType,
       { R, L, C, voltage },
-      duration / 1000,
-      duration,
+      effectiveDuration / 1000,
+      effectiveDuration,
       inputType
     );
-  }, [circuitType, R, L, C, voltage, duration, inputType]);
+  }, [circuitType, R, L, C, voltage, effectiveDuration, inputType]);
 
   const chartData = useMemo(() => {
     return response.data.map((point) => ({
@@ -131,13 +155,29 @@ export function InteractiveLab() {
     }));
   }, [response.data]);
 
+  // Time constant in ms for the chart marker
+  const timeConstantMs = timeConstant * 1000;
+
+  // Damped period for underdamped RLC
+  const dampedPeriodMs = useMemo(() => {
+    if (circuitType === 'RLC' && response.dampingType === 'underdamped' && response.omega0 && response.zeta) {
+      const omegaD = response.omega0 * Math.sqrt(1 - response.zeta * response.zeta);
+      return (2 * Math.PI / omegaD) * 1000;
+    }
+    return null;
+  }, [circuitType, response]);
+
   const handleReset = () => {
     setR(100);
     setL(0.1);
     setC(0.0001);
     setVoltage(10);
     setDuration(0.01);
+    setAutoDuration(false);
   };
+
+  // R_crit slider position as percentage
+  const rCritPercent = rCrit !== null ? Math.min(100, Math.max(0, (rCrit / 10000) * 100)) : null;
 
   return (
     <div className="space-y-6">
@@ -184,9 +224,9 @@ export function InteractiveLab() {
         </div>
       </div>
 
-      {/* Main dashboard: config + diagram + analysis side by side */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left column: Sliders */}
+      {/* ROW 1: Config + Circuit Diagram (2-col) */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Left: Sliders */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-slate-900">Configuration</h2>
@@ -200,12 +240,29 @@ export function InteractiveLab() {
           </div>
 
           <div className="space-y-5">
+            {/* R slider with R_crit marker */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">
                 Resistance (R): <span className="text-engineering-blue-700 font-semibold">{R >= 1000 ? `${(R/1000).toFixed(1)} k\u03A9` : `${R.toFixed(0)} \u03A9`}</span>
               </label>
-              <input type="range" min="1" max="10000" step="1" value={R} onChange={(e) => setR(parseFloat(e.target.value))} className="w-full accent-red-500" />
-              <div className="flex justify-between text-xs text-slate-400 mt-0.5"><span>1 &#937;</span><span>10 k&#937;</span></div>
+              <div className="relative">
+                <input type="range" min="1" max="10000" step="1" value={R} onChange={(e) => setR(parseFloat(e.target.value))} className="w-full accent-red-500" />
+                {/* R_crit marker for RLC */}
+                {rCritPercent !== null && (
+                  <div
+                    className="absolute top-full mt-0.5 -translate-x-1/2 pointer-events-none"
+                    style={{ left: `${rCritPercent}%` }}
+                  >
+                    <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-green-500 mx-auto" />
+                    <span className="text-[10px] font-semibold text-green-700 whitespace-nowrap">
+                      R<sub>crit</sub>={rCrit! >= 1000 ? `${(rCrit!/1000).toFixed(1)}k` : rCrit!.toFixed(0)}&Omega;
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className={`flex justify-between text-xs text-slate-400 ${rCritPercent !== null ? 'mt-5' : 'mt-0.5'}`}>
+                <span>1 &#937;</span><span>10 k&#937;</span>
+              </div>
             </div>
 
             {(circuitType === 'RL' || circuitType === 'RLC') && (
@@ -237,168 +294,42 @@ export function InteractiveLab() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Duration: <span className="text-engineering-blue-700 font-semibold">{(duration * 1000).toFixed(1)} ms</span>
-              </label>
-              <input type="range" min="1" max="100" step="1" value={duration * 1000} onChange={(e) => setDuration(parseFloat(e.target.value) / 1000)} className="w-full" />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-slate-700">
+                  Duration: <span className="text-engineering-blue-700 font-semibold">{(effectiveDuration * 1000).toFixed(1)} ms</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoDuration}
+                    onChange={(e) => setAutoDuration(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-engineering-blue-600"
+                  />
+                  <span className="text-xs font-medium text-slate-500">Auto (5&#964;)</span>
+                </label>
+              </div>
+              <input
+                type="range" min="1" max="100" step="1"
+                value={autoDuration ? effectiveDuration * 1000 : duration * 1000}
+                onChange={(e) => { setAutoDuration(false); setDuration(parseFloat(e.target.value) / 1000); }}
+                className={`w-full ${autoDuration ? 'opacity-40' : ''}`}
+                disabled={autoDuration}
+              />
               <div className="flex justify-between text-xs text-slate-400 mt-0.5"><span>1 ms</span><span>100 ms</span></div>
             </div>
           </div>
         </div>
 
-        {/* Center column: Circuit diagram */}
+        {/* Right: Circuit diagram */}
         <div className="bg-white rounded-lg shadow-md p-6 flex flex-col">
           <h2 className="text-lg font-semibold text-slate-900 mb-3">{circuitType} Circuit Diagram</h2>
           <div className="flex-1 flex items-center justify-center bg-slate-50 rounded-lg p-4 border border-slate-100">
             <CircuitDiagram type={circuitType} R={R} L={L} C={C} voltage={voltage} />
           </div>
         </div>
-
-        {/* Right column: Analysis values */}
-        <div className="bg-white rounded-lg shadow-md p-6 flex flex-col">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Circuit Analysis</h2>
-
-          {circuitType === 'RLC' && response.dampingType && (
-            <div className="space-y-3 flex-1">
-              <div className={`rounded-lg p-4 ${
-                response.dampingType === 'underdamped' ? 'bg-blue-50 border-l-4 border-blue-500' :
-                response.dampingType === 'critically-damped' ? 'bg-green-50 border-l-4 border-green-500' :
-                'bg-amber-50 border-l-4 border-amber-500'
-              }`}>
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Damping Type</p>
-                <p className="text-xl font-bold capitalize text-slate-900 mt-0.5">
-                  {response.dampingType.replace('-', ' ')}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3">
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Damping Coefficient &#945;</p>
-                  <p className="text-lg font-bold text-engineering-blue-700 mt-0.5">
-                    {response.alpha?.toFixed(2)} <span className="text-sm font-normal text-slate-500">rad/s</span>
-                  </p>
-                </div>
-
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Natural Frequency &#969;&#8320;</p>
-                  <p className="text-lg font-bold text-engineering-blue-700 mt-0.5">
-                    {response.omega0?.toFixed(2)} <span className="text-sm font-normal text-slate-500">rad/s</span>
-                  </p>
-                </div>
-
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Damping Ratio &#950;</p>
-                  <p className="text-lg font-bold text-engineering-blue-700 mt-0.5">
-                    {response.zeta?.toFixed(4)}
-                  </p>
-                </div>
-
-                {response.dampingType === 'underdamped' && response.omega0 && response.zeta && (
-                  <div className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Damped Frequency &#969;<sub>d</sub></p>
-                    <p className="text-lg font-bold text-engineering-blue-700 mt-0.5">
-                      {(response.omega0 * Math.sqrt(1 - response.zeta * response.zeta)).toFixed(2)} <span className="text-sm font-normal text-slate-500">rad/s</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {(circuitType === 'RC' || circuitType === 'RL') && (
-            <div className="space-y-3 flex-1">
-              <div className="bg-engineering-blue-50 rounded-lg p-4 border-l-4 border-engineering-blue-500">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Time Constant &#964;</p>
-                <p className="text-xl font-bold text-engineering-blue-700 mt-0.5">
-                  {response.timeConstant ? (response.timeConstant * 1000).toFixed(3) : '—'} <span className="text-sm font-normal text-slate-500">ms</span>
-                </p>
-              </div>
-
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Formula</p>
-                <div className="mt-1">
-                  {circuitType === 'RC'
-                    ? <MathWrapper formula={`\\tau = RC = ${R} \\times ${(C * 1e6).toFixed(1)} \\mu F = ${((R * C) * 1000).toFixed(3)}\\text{ ms}`} />
-                    : <MathWrapper formula={`\\tau = \\frac{L}{R} = \\frac{${(L * 1000).toFixed(1)}\\text{ mH}}{${R}\\;\\Omega} = ${((L / R) * 1000).toFixed(3)}\\text{ ms}`} />
-                  }
-                </div>
-              </div>
-
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">At t = &#964;</p>
-                <p className="text-sm text-slate-700 mt-1">
-                  Response reaches <span className="font-semibold text-engineering-blue-700">63.2%</span> of final value
-                </p>
-              </div>
-
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">At t = 5&#964;</p>
-                <p className="text-sm text-slate-700 mt-1">
-                  Response reaches <span className="font-semibold text-engineering-blue-700">99.3%</span> of final value (steady state)
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* Chart */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h3 className="text-xl font-semibold text-slate-900">Response Visualization</h3>
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-              inputType === 'step' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
-            }`}>
-              {inputType === 'step' ? 'Step Input u(t)' : 'Impulse Input \u03B4(t)'}
-            </span>
-          </div>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={showVoltage} onChange={(e) => setShowVoltage(e.target.checked)} className="w-4 h-4 accent-blue-500" />
-              <span className="text-sm text-slate-700">Voltage</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={showCurrent} onChange={(e) => setShowCurrent(e.target.checked)} className="w-4 h-4 accent-red-500" />
-              <span className="text-sm text-slate-700">Current</span>
-            </label>
-          </div>
-        </div>
-
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="time" label={{ value: 'Time (ms)', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'Voltage (V) / Current (mA)', angle: -90, position: 'insideLeft' }} />
-            <Tooltip
-              content={({ payload, label }) => {
-                if (payload && payload.length > 0) {
-                  return (
-                    <div className="bg-white p-3 border border-slate-300 rounded shadow-lg">
-                      <p className="font-semibold text-slate-800">Time: {typeof label === 'string' ? parseFloat(label).toFixed(3) : Number(label).toFixed(3)} ms</p>
-                      {payload.map((entry, index) => (
-                        <p key={index} style={{ color: entry.color }} className="text-sm">
-                          {entry.name}: {parseFloat(entry.value as string).toFixed(3)} {entry.name === 'Voltage' ? 'V' : 'mA'}
-                        </p>
-                      ))}
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Legend />
-            {showVoltage && (
-              <Line type="monotone" dataKey="voltage" stroke="#3b82f6" name="Voltage" dot={false} strokeWidth={2} />
-            )}
-            {showCurrent && (
-              <Line type="monotone" dataKey="current" stroke="#ef4444" name="Current" dot={false} strokeWidth={2} />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Equations */}
+      {/* ROW 2: Equations */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex items-center gap-3 mb-4">
           <h3 className="text-xl font-semibold text-slate-900">Circuit Equations</h3>
@@ -412,7 +343,7 @@ export function InteractiveLab() {
         </div>
 
         {circuitType === 'RC' && inputType === 'step' && (
-          <div className="space-y-3">
+          <div className="grid md:grid-cols-3 gap-3">
             <div className="bg-slate-50 p-4 rounded-lg">
               <p className="text-sm font-semibold text-slate-700 mb-2">Time Constant:</p>
               <MathWrapper formula="\tau = RC" block />
@@ -433,19 +364,21 @@ export function InteractiveLab() {
             <div className="bg-amber-50 p-4 rounded-lg border-l-3 border-amber-400">
               <p className="text-xs text-amber-700 mb-2">Impulse response h(t) = derivative of step response</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-lg">
-              <p className="text-sm font-semibold text-slate-700 mb-2">Voltage (Impulse Response):</p>
-              <MathWrapper formula="v_C(t) = \frac{1}{RC}e^{-t/\tau}" block />
-            </div>
-            <div className="bg-slate-50 p-4 rounded-lg">
-              <p className="text-sm font-semibold text-slate-700 mb-2">S-Domain:</p>
-              <MathWrapper formula="H(s) = \frac{1/RC}{s + 1/RC}" block />
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <p className="text-sm font-semibold text-slate-700 mb-2">Voltage (Impulse Response):</p>
+                <MathWrapper formula="v_C(t) = \frac{1}{RC}e^{-t/\tau}" block />
+              </div>
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <p className="text-sm font-semibold text-slate-700 mb-2">S-Domain:</p>
+                <MathWrapper formula="H(s) = \frac{1/RC}{s + 1/RC}" block />
+              </div>
             </div>
           </div>
         )}
 
         {circuitType === 'RL' && inputType === 'step' && (
-          <div className="space-y-3">
+          <div className="grid md:grid-cols-3 gap-3">
             <div className="bg-slate-50 p-4 rounded-lg">
               <p className="text-sm font-semibold text-slate-700 mb-2">Time Constant:</p>
               <MathWrapper formula="\tau = \frac{L}{R}" block />
@@ -466,22 +399,25 @@ export function InteractiveLab() {
             <div className="bg-amber-50 p-4 rounded-lg border-l-3 border-amber-400">
               <p className="text-xs text-amber-700 mb-2">Impulse response h(t) = derivative of step response</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-lg">
-              <p className="text-sm font-semibold text-slate-700 mb-2">Current (Impulse Response):</p>
-              <MathWrapper formula="i(t) = \frac{1}{L}e^{-Rt/L}" block />
-            </div>
-            <div className="bg-slate-50 p-4 rounded-lg">
-              <p className="text-sm font-semibold text-slate-700 mb-2">S-Domain:</p>
-              <MathWrapper formula="H(s) = \frac{R/L}{s + R/L}" block />
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <p className="text-sm font-semibold text-slate-700 mb-2">Current (Impulse Response):</p>
+                <MathWrapper formula="i(t) = \frac{1}{L}e^{-Rt/L}" block />
+              </div>
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <p className="text-sm font-semibold text-slate-700 mb-2">S-Domain:</p>
+                <MathWrapper formula="H(s) = \frac{R/L}{s + R/L}" block />
+              </div>
             </div>
           </div>
         )}
 
         {circuitType === 'RLC' && response.alpha && response.omega0 && response.zeta && (
           <div className="space-y-3">
+            {/* Characteristic parameters in a compact row */}
             <div className="bg-slate-50 p-4 rounded-lg">
               <p className="text-sm font-semibold text-slate-700 mb-2">Characteristic Parameters:</p>
-              <div className="space-y-2">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <MathWrapper formula="\alpha = \frac{R}{2L}" />
                   <span className="text-sm text-slate-600 ml-2">= {response.alpha.toFixed(2)} rad/s</span>
@@ -553,6 +489,179 @@ export function InteractiveLab() {
         )}
       </div>
 
+      {/* ROW 3: Chart + Analysis side by side */}
+      <div className="grid lg:grid-cols-[1fr_320px] gap-6">
+        {/* Left: Chart */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-semibold text-slate-900">Response Visualization</h3>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                inputType === 'step' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+              }`}>
+                {inputType === 'step' ? 'Step Input u(t)' : 'Impulse Input \u03B4(t)'}
+              </span>
+            </div>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={showVoltage} onChange={(e) => setShowVoltage(e.target.checked)} className="w-4 h-4 accent-blue-500" />
+                <span className="text-sm text-slate-700">Voltage</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={showCurrent} onChange={(e) => setShowCurrent(e.target.checked)} className="w-4 h-4 accent-red-500" />
+                <span className="text-sm text-slate-700">Current</span>
+              </label>
+            </div>
+          </div>
+
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="time" label={{ value: 'Time (ms)', position: 'insideBottom', offset: -5 }} />
+              <YAxis label={{ value: 'Voltage (V) / Current (mA)', angle: -90, position: 'insideLeft' }} />
+              <Tooltip
+                content={({ payload, label }) => {
+                  if (payload && payload.length > 0) {
+                    return (
+                      <div className="bg-white p-3 border border-slate-300 rounded shadow-lg">
+                        <p className="font-semibold text-slate-800">Time: {typeof label === 'string' ? parseFloat(label).toFixed(3) : Number(label).toFixed(3)} ms</p>
+                        {payload.map((entry, index) => (
+                          <p key={index} style={{ color: entry.color }} className="text-sm">
+                            {entry.name}: {parseFloat(entry.value as string).toFixed(3)} {entry.name === 'Voltage' ? 'V' : 'mA'}
+                          </p>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Legend />
+              {/* Time constant marker */}
+              {timeConstantMs <= effectiveDuration * 1000 && (
+                <ReferenceLine
+                  x={timeConstantMs}
+                  stroke="#16a34a"
+                  strokeWidth={1.5}
+                  strokeDasharray="6 3"
+                  label={{ value: '\u03C4', position: 'top', fill: '#16a34a', fontWeight: 'bold', fontSize: 14 }}
+                />
+              )}
+              {/* Damped period marker for underdamped RLC */}
+              {dampedPeriodMs && dampedPeriodMs <= effectiveDuration * 1000 && (
+                <ReferenceLine
+                  x={dampedPeriodMs}
+                  stroke="#7c3aed"
+                  strokeWidth={1.5}
+                  strokeDasharray="6 3"
+                  label={{ value: 'T\u1D48', position: 'top', fill: '#7c3aed', fontWeight: 'bold', fontSize: 13 }}
+                />
+              )}
+              {showVoltage && (
+                <Line type="monotone" dataKey="voltage" stroke="#3b82f6" name="Voltage" dot={false} strokeWidth={2} />
+              )}
+              {showCurrent && (
+                <Line type="monotone" dataKey="current" stroke="#ef4444" name="Current" dot={false} strokeWidth={2} />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Right: Analysis panel */}
+        <div className="bg-white rounded-lg shadow-md p-6 flex flex-col">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Circuit Analysis</h2>
+
+          {circuitType === 'RLC' && response.dampingType && (
+            <div className="space-y-3 flex-1">
+              <div className={`rounded-lg p-4 ${
+                response.dampingType === 'underdamped' ? 'bg-blue-50 border-l-4 border-blue-500' :
+                response.dampingType === 'critically-damped' ? 'bg-green-50 border-l-4 border-green-500' :
+                'bg-amber-50 border-l-4 border-amber-500'
+              }`}>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Damping Type</p>
+                <p className="text-xl font-bold capitalize text-slate-900 mt-0.5">
+                  {response.dampingType.replace('-', ' ')}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Damping Coefficient &#945;</p>
+                  <p className="text-lg font-bold text-engineering-blue-700 mt-0.5">
+                    {response.alpha?.toFixed(2)} <span className="text-sm font-normal text-slate-500">rad/s</span>
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Natural Frequency &#969;&#8320;</p>
+                  <p className="text-lg font-bold text-engineering-blue-700 mt-0.5">
+                    {response.omega0?.toFixed(2)} <span className="text-sm font-normal text-slate-500">rad/s</span>
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Damping Ratio &#950;</p>
+                  <p className="text-lg font-bold text-engineering-blue-700 mt-0.5">
+                    {response.zeta?.toFixed(4)}
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Envelope &#964; = 1/&#945;</p>
+                  <p className="text-lg font-bold text-green-700 mt-0.5">
+                    {timeConstantMs.toFixed(3)} <span className="text-sm font-normal text-slate-500">ms</span>
+                  </p>
+                </div>
+
+                {response.dampingType === 'underdamped' && response.omega0 && response.zeta && (
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Damped Frequency &#969;<sub>d</sub></p>
+                    <p className="text-lg font-bold text-engineering-blue-700 mt-0.5">
+                      {(response.omega0 * Math.sqrt(1 - response.zeta * response.zeta)).toFixed(2)} <span className="text-sm font-normal text-slate-500">rad/s</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {(circuitType === 'RC' || circuitType === 'RL') && (
+            <div className="space-y-3 flex-1">
+              <div className="bg-engineering-blue-50 rounded-lg p-4 border-l-4 border-engineering-blue-500">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Time Constant &#964;</p>
+                <p className="text-xl font-bold text-engineering-blue-700 mt-0.5">
+                  {response.timeConstant ? (response.timeConstant * 1000).toFixed(3) : '—'} <span className="text-sm font-normal text-slate-500">ms</span>
+                </p>
+              </div>
+
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Formula</p>
+                <div className="mt-1">
+                  {circuitType === 'RC'
+                    ? <MathWrapper formula={`\\tau = RC = ${R} \\times ${(C * 1e6).toFixed(1)} \\mu F = ${((R * C) * 1000).toFixed(3)}\\text{ ms}`} />
+                    : <MathWrapper formula={`\\tau = \\frac{L}{R} = \\frac{${(L * 1000).toFixed(1)}\\text{ mH}}{${R}\\;\\Omega} = ${((L / R) * 1000).toFixed(3)}\\text{ ms}`} />
+                  }
+                </div>
+              </div>
+
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">At t = &#964;</p>
+                <p className="text-sm text-slate-700 mt-1">
+                  Response reaches <span className="font-semibold text-engineering-blue-700">63.2%</span> of final value
+                </p>
+              </div>
+
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">At t = 5&#964;</p>
+                <p className="text-sm text-slate-700 mt-1">
+                  Response reaches <span className="font-semibold text-engineering-blue-700">99.3%</span> of final value (steady state)
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Tips */}
       <div className="bg-gradient-to-r from-engineering-blue-50 to-slate-50 rounded-lg shadow-md p-6 border-l-4 border-engineering-blue-600">
         <h3 className="text-xl font-semibold text-slate-900 mb-3">Experiment Tips</h3>
@@ -567,11 +676,11 @@ export function InteractiveLab() {
           </li>
           <li className="flex items-start gap-2">
             <span className="text-engineering-blue-600 font-bold mt-1">&#8226;</span>
-            <span><strong>RLC Circuits:</strong> Adjust R to change damping. Low R gives oscillations (underdamped), high R eliminates them (overdamped).</span>
+            <span><strong>RLC Circuits:</strong> Adjust R to change damping. Low R gives oscillations (underdamped), high R eliminates them (overdamped). The green R<sub>crit</sub> marker on the slider shows where critical damping occurs.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-engineering-blue-600 font-bold mt-1">&#8226;</span>
-            <span>Try to achieve critical damping (&#950; = 1) for the fastest response without overshoot!</span>
+            <span>The dashed green line on the chart marks the time constant &#964;. For underdamped RLC, the purple line marks one damped period T<sub>d</sub>.</span>
           </li>
         </ul>
       </div>

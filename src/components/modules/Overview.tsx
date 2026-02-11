@@ -1,5 +1,6 @@
 import { Target, Compass, AlertTriangle, Scale, Zap, Clock, FunctionSquare, GitBranch, FlaskConical, ArrowRight, Lightbulb } from 'lucide-react';
 import { MathWrapper } from '../common/MathWrapper';
+import { Tabs } from '../common/Tabs';
 import { Link } from 'react-router-dom';
 
 const learningPath = [
@@ -45,25 +46,9 @@ const learningPath = [
   },
 ];
 
-export function Overview() {
+function OverviewTab() {
   return (
-    <div className="space-y-8">
-      {/* Hero header */}
-      <div className="bg-gradient-to-r from-engineering-blue-600 via-engineering-blue-700 to-engineering-blue-800 rounded-xl p-8 text-white shadow-lg">
-        <p className="text-engineering-blue-200 text-sm font-medium tracking-wide uppercase mb-2">
-          LUT University &middot; Electromagnetism and Circuit Analysis
-        </p>
-        <h1 className="text-3xl font-bold text-white mb-3">
-          Module 2: Circuit Analysis
-        </h1>
-        <p className="text-engineering-blue-100 text-base leading-relaxed max-w-3xl">
-          Bridge the gap between <strong className="text-white">physical intuition</strong> and{' '}
-          <strong className="text-white">mathematical modeling</strong>. Explore how energy storage
-          in electric and magnetic fields connects to Laplace transforms, transfer functions, and
-          transient circuit behavior.
-        </p>
-      </div>
-
+    <div className="space-y-6">
       {/* Two-domain overview */}
       <div className="grid md:grid-cols-2 gap-5">
         <div className="bg-gradient-to-br from-blue-50 to-white p-5 rounded-xl border border-blue-200 shadow-sm">
@@ -129,43 +114,6 @@ export function Overview() {
         </div>
       </section>
 
-      {/* Learning path */}
-      <section>
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-engineering-blue-100 flex items-center justify-center shrink-0">
-            <Compass className="w-4 h-4 text-engineering-blue-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">Your Learning Path</h2>
-            <p className="text-sm text-slate-500">Follow these modules in order for the best learning experience</p>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          {learningPath.map((module, index) => (
-            <Link
-              key={module.to}
-              to={module.to}
-              className={`group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r ${module.color} border shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5`}
-            >
-              <div className="flex items-center gap-4 flex-1">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-slate-400 w-5 text-right">{index + 1}</span>
-                  <div className={`w-10 h-10 rounded-xl ${module.iconBg} flex items-center justify-center`}>
-                    <module.icon className="w-5 h-5" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-slate-900 text-sm">{module.title}</h4>
-                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{module.description}</p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors shrink-0" />
-            </Link>
-          ))}
-        </div>
-      </section>
-
       {/* AI Tutor callout */}
       <section className="bg-gradient-to-r from-engineering-blue-50 to-indigo-50 rounded-xl p-5 border border-engineering-blue-200 shadow-sm">
         <div className="flex items-start gap-3">
@@ -182,7 +130,53 @@ export function Overview() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
 
+function LearningPathTab() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-8 h-8 rounded-lg bg-engineering-blue-100 flex items-center justify-center shrink-0">
+          <Compass className="w-4 h-4 text-engineering-blue-600" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">Your Learning Path</h2>
+          <p className="text-sm text-slate-500">Follow these modules in order for the best learning experience</p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {learningPath.map((module, index) => (
+          <Link
+            key={module.to}
+            to={module.to}
+            className={`group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r ${module.color} border shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5`}
+          >
+            <div className="flex items-center gap-4 flex-1">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-slate-400 w-5 text-right">{index + 1}</span>
+                <div className={`w-10 h-10 rounded-xl ${module.iconBg} flex items-center justify-center`}>
+                  <module.icon className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-slate-900 text-sm">{module.title}</h4>
+                <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{module.description}</p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors shrink-0" />
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AboutTab() {
+  return (
+    <div className="space-y-6">
       {/* Educational disclaimer */}
       <section className="bg-amber-50 rounded-xl p-5 border border-amber-200">
         <div className="flex items-start gap-3 mb-3">
@@ -190,7 +184,7 @@ export function Overview() {
           <h3 className="text-base font-semibold text-amber-900">Educational Disclaimer</h3>
         </div>
 
-        <p className="text-slate-600 text-sm leading-relaxed mb-3 ml-8">
+        <p className="text-slate-700 text-sm leading-relaxed mb-3 ml-8">
           This application models <strong>ideal linear components</strong>. Real circuits may exhibit
           non-linear behavior, parasitic effects, and tolerance variations not modeled here.
         </p>
@@ -226,6 +220,48 @@ export function Overview() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+export function Overview() {
+  return (
+    <div className="space-y-8">
+      {/* Hero header */}
+      <div className="bg-gradient-to-r from-engineering-blue-600 via-engineering-blue-700 to-engineering-blue-800 rounded-xl p-8 text-white shadow-lg">
+        <p className="text-engineering-blue-200 text-sm font-medium tracking-wide uppercase mb-2">
+          LUT University &middot; Electromagnetism and Circuit Analysis
+        </p>
+        <h1 className="text-3xl font-bold text-white mb-3">
+          Module 2: Circuit Analysis
+        </h1>
+        <p className="text-engineering-blue-100 text-base leading-relaxed max-w-3xl">
+          Bridge the gap between <strong className="text-white">physical intuition</strong> and{' '}
+          <strong className="text-white">mathematical modeling</strong>. Explore how energy storage
+          in electric and magnetic fields connects to Laplace transforms, transfer functions, and
+          transient circuit behavior.
+        </p>
+      </div>
+
+      <Tabs
+        tabs={[
+          {
+            label: 'Overview',
+            icon: <Target className="w-4 h-4" />,
+            content: <OverviewTab />,
+          },
+          {
+            label: 'Learning Path',
+            icon: <Compass className="w-4 h-4" />,
+            content: <LearningPathTab />,
+          },
+          {
+            label: 'About',
+            icon: <Scale className="w-4 h-4" />,
+            content: <AboutTab />,
+          },
+        ]}
+      />
     </div>
   );
 }

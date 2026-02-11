@@ -197,21 +197,21 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
         <MessageSquare className="w-4 h-4" />
         <h3 className="font-semibold text-sm">AI Circuit Tutor</h3>
       </div>
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-1">
         {isApiKeySet && (
           <button
             onClick={handleClearApiKey}
-            className="hover:bg-engineering-blue-800 p-1.5 rounded text-engineering-blue-200 hover:text-white transition-colors"
+            className="hover:bg-engineering-blue-800 p-1.5 rounded text-white/70 hover:text-white transition-colors"
             aria-label="Change API key"
             title="Change API key"
           >
-            <Key className="w-3.5 h-3.5" />
+            <Key className="w-4 h-4" />
           </button>
         )}
         {isFloating ? (
           <button
             onClick={() => onModeChange('docked')}
-            className="hover:bg-engineering-blue-800 p-1.5 rounded text-engineering-blue-200 hover:text-white transition-colors"
+            className="hover:bg-engineering-blue-800 p-1.5 rounded text-white/70 hover:text-white transition-colors"
             aria-label="Dock to sidebar"
             title="Dock to sidebar"
           >
@@ -220,20 +220,20 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
         ) : (
           <button
             onClick={() => onModeChange('floating')}
-            className="hover:bg-engineering-blue-800 p-1.5 rounded text-engineering-blue-200 hover:text-white transition-colors"
+            className="hover:bg-engineering-blue-800 p-1.5 rounded text-white/70 hover:text-white transition-colors"
             aria-label="Detach as floating window"
             title="Detach as floating window"
           >
-            <Maximize2 className="w-3.5 h-3.5" />
+            <Maximize2 className="w-4 h-4" />
           </button>
         )}
         <button
           onClick={() => onModeChange('closed')}
-          className="hover:bg-red-600 p-1.5 rounded text-engineering-blue-200 hover:text-white transition-colors"
+          className="bg-white/15 hover:bg-red-500 p-1.5 rounded text-white transition-colors"
           aria-label="Close tutor"
           title="Close"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
       </div>
     </div>
