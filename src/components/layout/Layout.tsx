@@ -1,14 +1,14 @@
 import { useState, type ReactNode } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { Sidebar } from './Sidebar';
-import { AiTutor } from '../common/AiTutor';
+import { AiTutor, type TutorMode } from '../common/AiTutor';
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
-  const [isTutorOpen, setIsTutorOpen] = useState(false);
+  const [tutorMode, setTutorMode] = useState<TutorMode>('closed');
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -18,18 +18,21 @@ export function Layout({ children }: LayoutProps) {
           {children}
         </div>
       </main>
-      {!isTutorOpen && (
+      {tutorMode === 'closed' && (
         <button
-          onClick={() => setIsTutorOpen(true)}
-          className="flex items-center gap-2 px-3 py-4 bg-gradient-to-b from-engineering-blue-500 to-engineering-blue-700 hover:from-engineering-blue-600 hover:to-engineering-blue-800 text-white writing-mode-vertical rounded-l-lg shadow-lg transition-all z-50 shrink-0 self-center hover:shadow-xl"
+          onClick={() => setTutorMode('docked')}
+          className="flex items-center gap-2 px-3 py-4 bg-white border border-slate-200 hover:border-engineering-blue-300 hover:bg-engineering-blue-50 text-engineering-blue-700 writing-mode-vertical rounded-l-lg shadow-md transition-all z-50 shrink-0 self-center hover:shadow-lg"
           style={{ writingMode: 'vertical-rl' }}
           aria-label="Open AI Tutor"
         >
-          <MessageSquare className="w-5 h-5" />
+          <MessageSquare className="w-5 h-5 text-engineering-blue-600" />
           <span className="text-sm font-semibold tracking-wide">AI Circuit Tutor</span>
         </button>
       )}
-      <AiTutor isOpen={isTutorOpen} onToggle={() => setIsTutorOpen(false)} />
+      <AiTutor
+        mode={tutorMode}
+        onModeChange={setTutorMode}
+      />
     </div>
   );
 }

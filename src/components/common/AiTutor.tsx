@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Key, PanelRightOpen } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { MessageSquare, Send, Key, PanelRightOpen, PanelLeftClose, X, Maximize2, Minimize2 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { MathWrapper } from './MathWrapper';
 
@@ -8,9 +8,11 @@ interface Message {
   content: string;
 }
 
+export type TutorMode = 'closed' | 'docked' | 'floating';
+
 interface AiTutorProps {
-  isOpen: boolean;
-  onToggle: () => void;
+  mode: TutorMode;
+  onModeChange: (mode: TutorMode) => void;
 }
 
 const SYSTEM_INSTRUCTION = `You are a rigorous engineering tutor specializing in circuit analysis. Your role is to help students understand:
@@ -29,7 +31,7 @@ Guidelines:
 5. If asked about unrelated topics, politely redirect to circuit theory.
 6. Use proper engineering terminology and reference Nilsson & Riedel principles when appropriate.`;
 
-export function AiTutor({ isOpen, onToggle }: AiTutorProps) {
+export function AiTutor({ mode, onModeChange }: AiTutorProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [apiKey, setApiKey] = useState(() => {
@@ -39,6 +41,11 @@ export function AiTutor({ isOpen, onToggle }: AiTutorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<ReturnType<ReturnType<GoogleGenerativeAI['getGenerativeModel']>['startChat']> | null>(null);
+
+  // Floating position state
+  const [floatPos, setFloatPos] = useState({ x: -1, y: -1 });
+  const isDragging = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -54,6 +61,16 @@ export function AiTutor({ isOpen, onToggle }: AiTutorProps) {
       initializeChat(apiKey);
     }
   }, []);
+
+  // Set default floating position on first float
+  useEffect(() => {
+    if (mode === 'floating' && floatPos.x === -1) {
+      setFloatPos({
+        x: Math.max(window.innerWidth - 420, 20),
+        y: Math.max(window.innerHeight - 560, 20),
+      });
+    }
+  }, [mode]);
 
   const initializeChat = (key: string) => {
     const genAI = new GoogleGenerativeAI(key);
@@ -137,139 +154,215 @@ export function AiTutor({ isOpen, onToggle }: AiTutorProps) {
     }
   };
 
-  if (!isOpen) {
+  // Drag handlers for floating mode
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (mode !== 'floating') return;
+    isDragging.current = true;
+    dragOffset.current = {
+      x: e.clientX - floatPos.x,
+      y: e.clientY - floatPos.y,
+    };
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return;
+      setFloatPos({
+        x: Math.max(0, Math.min(window.innerWidth - 400, ev.clientX - dragOffset.current.x)),
+        y: Math.max(0, Math.min(window.innerHeight - 100, ev.clientY - dragOffset.current.y)),
+      });
+    };
+
+    const handleMouseUp = () => {
+      isDragging.current = false;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [mode, floatPos]);
+
+  if (mode === 'closed') {
     return null;
   }
 
-  return (
-    <aside className="w-96 h-screen bg-white border-l border-slate-200 flex flex-col shrink-0">
-      <div className="bg-gradient-to-r from-engineering-blue-600 to-engineering-blue-700 text-white p-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5" />
-          <h3 className="font-semibold">AI Circuit Tutor</h3>
-        </div>
-        <div className="flex items-center gap-1">
-          {isApiKeySet && (
-            <button
-              onClick={handleClearApiKey}
-              className="hover:bg-engineering-blue-800 p-1 rounded text-engineering-blue-200 hover:text-white transition-colors"
-              aria-label="Change API key"
-              title="Change API key"
-            >
-              <Key className="w-4 h-4" />
-            </button>
-          )}
+  const isFloating = mode === 'floating';
+
+  // Header bar (shared between docked and floating)
+  const header = (
+    <div
+      className={`bg-gradient-to-r from-engineering-blue-600 to-engineering-blue-700 text-white p-3 flex justify-between items-center ${isFloating ? 'cursor-grab active:cursor-grabbing rounded-t-xl' : ''}`}
+      onMouseDown={isFloating ? handleMouseDown : undefined}
+    >
+      <div className="flex items-center gap-2 select-none">
+        <MessageSquare className="w-4 h-4" />
+        <h3 className="font-semibold text-sm">AI Circuit Tutor</h3>
+      </div>
+      <div className="flex items-center gap-0.5">
+        {isApiKeySet && (
           <button
-            onClick={onToggle}
-            className="hover:bg-engineering-blue-800 p-1 rounded transition-colors"
-            aria-label="Close tutor panel"
+            onClick={handleClearApiKey}
+            className="hover:bg-engineering-blue-800 p-1.5 rounded text-engineering-blue-200 hover:text-white transition-colors"
+            aria-label="Change API key"
+            title="Change API key"
           >
-            <PanelRightOpen className="w-5 h-5" />
+            <Key className="w-3.5 h-3.5" />
+          </button>
+        )}
+        {isFloating ? (
+          <button
+            onClick={() => onModeChange('docked')}
+            className="hover:bg-engineering-blue-800 p-1.5 rounded text-engineering-blue-200 hover:text-white transition-colors"
+            aria-label="Dock to sidebar"
+            title="Dock to sidebar"
+          >
+            <PanelLeftClose className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={() => onModeChange('floating')}
+            className="hover:bg-engineering-blue-800 p-1.5 rounded text-engineering-blue-200 hover:text-white transition-colors"
+            aria-label="Detach as floating window"
+            title="Detach as floating window"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <button
+          onClick={() => onModeChange('closed')}
+          className="hover:bg-red-600 p-1.5 rounded text-engineering-blue-200 hover:text-white transition-colors"
+          aria-label="Close tutor"
+          title="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+
+  // Chat content (shared)
+  const chatContent = !isApiKeySet ? (
+    <div className="flex-1 p-6 flex flex-col justify-center items-center gap-4">
+      <Key className="w-12 h-12 text-engineering-blue-600" />
+      <h4 className="text-lg font-semibold text-slate-800">Enter Your API Key</h4>
+      <p className="text-sm text-slate-600 text-center">
+        Get your free API key from{' '}
+        <a
+          href="https://aistudio.google.com/app/apikey"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-engineering-blue-600 underline"
+        >
+          Google AI Studio
+        </a>
+      </p>
+      <input
+        type="password"
+        value={apiKey}
+        onChange={(e) => setApiKey(e.target.value)}
+        placeholder="Paste your Gemini API key"
+        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-engineering-blue-500"
+        onKeyDown={(e) => e.key === 'Enter' && handleSetApiKey()}
+      />
+      <button
+        onClick={handleSetApiKey}
+        disabled={!apiKey.trim()}
+        className="w-full bg-engineering-blue-600 text-white py-2 rounded-lg hover:bg-engineering-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Start Tutoring
+      </button>
+    </div>
+  ) : (
+    <>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div
+              className={`max-w-[85%] p-3 rounded-lg ${
+                message.role === 'user'
+                  ? 'bg-engineering-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-800'
+              }`}
+            >
+              {message.role === 'assistant' ? (
+                <div className="prose prose-sm max-w-none">
+                  {parseLatex(message.content).map((part, idx) => (
+                    <span key={idx}>
+                      {part.type === 'text' ? (
+                        part.content
+                      ) : (
+                        <MathWrapper formula={part.content} />
+                      )}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              )}
+            </div>
+          </div>
+        ))}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-slate-100 text-slate-800 p-3 rounded-lg">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div className="p-3 border-t border-slate-200">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+            placeholder="Ask about circuits..."
+            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-engineering-blue-500 text-sm"
+            disabled={isLoading}
+          />
+          <button
+            onClick={handleSendMessage}
+            disabled={!input.trim() || isLoading}
+            className="bg-engineering-blue-600 text-white p-2 rounded-lg hover:bg-engineering-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Send message"
+          >
+            <Send className="w-4 h-4" />
           </button>
         </div>
       </div>
+    </>
+  );
 
-      {!isApiKeySet ? (
-        <div className="flex-1 p-6 flex flex-col justify-center items-center gap-4">
-          <Key className="w-12 h-12 text-engineering-blue-600" />
-          <h4 className="text-lg font-semibold text-slate-800">Enter Your API Key</h4>
-          <p className="text-sm text-slate-600 text-center">
-            Get your free API key from{' '}
-            <a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-engineering-blue-600 underline"
-            >
-              Google AI Studio
-            </a>
-          </p>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Paste your Gemini API key"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-engineering-blue-500"
-            onKeyDown={(e) => e.key === 'Enter' && handleSetApiKey()}
-          />
-          <button
-            onClick={handleSetApiKey}
-            disabled={!apiKey.trim()}
-            className="w-full bg-engineering-blue-600 text-white py-2 rounded-lg hover:bg-engineering-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Start Tutoring
-          </button>
-        </div>
-      ) : (
-        <>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] p-3 rounded-lg ${
-                    message.role === 'user'
-                      ? 'bg-engineering-blue-600 text-white'
-                      : 'bg-slate-100 text-slate-800'
-                  }`}
-                >
-                  {message.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none">
-                      {parseLatex(message.content).map((part, idx) => (
-                        <span key={idx}>
-                          {part.type === 'text' ? (
-                            part.content
-                          ) : (
-                            <MathWrapper formula={part.content} />
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-slate-100 text-slate-800 p-3 rounded-lg">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+  // Floating mode
+  if (isFloating) {
+    return (
+      <div
+        className="fixed z-[100] w-[380px] h-[520px] bg-white rounded-xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
+        style={{
+          left: floatPos.x,
+          top: floatPos.y,
+        }}
+      >
+        {header}
+        {chatContent}
+      </div>
+    );
+  }
 
-          <div className="p-4 border-t border-slate-200">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Ask about circuits..."
-                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-engineering-blue-500 text-sm"
-                disabled={isLoading}
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!input.trim() || isLoading}
-                className="bg-engineering-blue-600 text-white p-2 rounded-lg hover:bg-engineering-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Send message"
-              >
-                <Send className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+  // Docked mode
+  return (
+    <aside className="w-96 h-screen bg-white border-l border-slate-200 flex flex-col shrink-0">
+      {header}
+      {chatContent}
     </aside>
   );
 }
