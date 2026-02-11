@@ -1,38 +1,13 @@
 import { useState } from 'react';
+import { BookOpen, SlidersHorizontal, Activity } from 'lucide-react';
 import { MathWrapper } from '../common/MathWrapper';
+import { Tabs } from '../common/Tabs';
 import { calculateTransferFunction } from '../../utils/circuitSolver';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
-export function SDomainAnalysis() {
-  const [R, setR] = useState(100);
-  const [L, setL] = useState(0.1);
-  const [C, setC] = useState(0.0001);
-
-  const { poles, numerator, denominator } = calculateTransferFunction(R, L, C);
-  const alpha = R / (2 * L);
-  const omega0 = 1 / Math.sqrt(L * C);
-  const zeta = alpha / omega0;
-
-  let dampingType = '';
-  if (zeta > 1.05) dampingType = 'Overdamped';
-  else if (zeta < 0.95) dampingType = 'Underdamped';
-  else dampingType = 'Critically Damped';
-
-  const poleData = poles.map((pole, idx) => ({
-    x: pole.real,
-    y: pole.imag,
-    name: `Pole ${idx + 1}`,
-  }));
-
+function TheoryTab() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">S-Domain Analysis</h1>
-        <p className="text-lg text-slate-600">
-          Transfer functions, poles, zeros, and stability analysis
-        </p>
-      </div>
-
+    <div className="space-y-6">
       <section className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-semibold text-slate-900 mb-4">Transfer Function Fundamentals</h2>
 
@@ -48,7 +23,7 @@ export function SDomainAnalysis() {
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-gradient-to-br from-blue-50 to-white p-4 rounded-lg border border-blue-200">
-              <h4 className="font-semibold text-engineering-blue-900 mb-2">Poles</h4>
+              <h4 className="font-semibold text-blue-900 mb-2">Poles</h4>
               <p className="text-sm text-slate-700 mb-2">
                 Values of <MathWrapper formula="s" /> where <MathWrapper formula="D(s) = 0" />
               </p>
@@ -94,7 +69,33 @@ export function SDomainAnalysis() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
 
+function InteractiveTab() {
+  const [R, setR] = useState(100);
+  const [L, setL] = useState(0.1);
+  const [C, setC] = useState(0.0001);
+
+  const { poles, numerator, denominator } = calculateTransferFunction(R, L, C);
+  const alpha = R / (2 * L);
+  const omega0 = 1 / Math.sqrt(L * C);
+  const zeta = alpha / omega0;
+
+  let dampingType = '';
+  if (zeta > 1.05) dampingType = 'Overdamped';
+  else if (zeta < 0.95) dampingType = 'Underdamped';
+  else dampingType = 'Critically Damped';
+
+  const poleData = poles.map((pole, idx) => ({
+    x: pole.real,
+    y: pole.imag,
+    name: `Pole ${idx + 1}`,
+  }));
+
+  return (
+    <div className="space-y-6">
       <section className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-semibold text-slate-900 mb-4">Interactive Pole-Zero Map</h2>
 
@@ -255,13 +256,19 @@ export function SDomainAnalysis() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
 
+function DampingTab() {
+  return (
+    <div className="space-y-6">
       <section className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-semibold text-slate-900 mb-4">Damping Behavior</h2>
 
         <div className="grid md:grid-cols-3 gap-4">
           <div className="bg-gradient-to-br from-blue-50 to-white p-5 rounded-lg border-2 border-blue-300">
-            <h4 className="font-semibold text-engineering-blue-900 mb-2">
+            <h4 className="font-semibold text-blue-900 mb-2">
               Underdamped (ζ &lt; 1)
             </h4>
             <div className="mb-3">
@@ -348,6 +355,39 @@ export function SDomainAnalysis() {
           </li>
         </ul>
       </section>
+    </div>
+  );
+}
+
+export function SDomainAnalysis() {
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-4xl font-bold text-slate-900 mb-2">S-Domain Analysis</h1>
+        <p className="text-lg text-slate-600">
+          Transfer functions, poles, zeros, and stability analysis
+        </p>
+      </div>
+
+      <Tabs
+        tabs={[
+          {
+            label: 'Theory',
+            icon: <BookOpen className="w-4 h-4" />,
+            content: <TheoryTab />,
+          },
+          {
+            label: 'Interactive Lab',
+            icon: <SlidersHorizontal className="w-4 h-4" />,
+            content: <InteractiveTab />,
+          },
+          {
+            label: 'Damping & Takeaways',
+            icon: <Activity className="w-4 h-4" />,
+            content: <DampingTab />,
+          },
+        ]}
+      />
     </div>
   );
 }
