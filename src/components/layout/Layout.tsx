@@ -21,7 +21,7 @@ export function Layout({ children }: LayoutProps) {
       {!isTutorOpen && (
         <button
           onClick={() => setIsTutorOpen(true)}
-          className="flex items-center gap-2 px-3 py-4 bg-engineering-blue-600 hover:bg-engineering-blue-700 text-white writing-mode-vertical rounded-l-lg shadow-lg transition-colors z-50 shrink-0 self-center"
+          className="flex items-center gap-2 px-3 py-4 bg-gradient-to-b from-engineering-blue-500 to-engineering-blue-700 hover:from-engineering-blue-600 hover:to-engineering-blue-800 text-white writing-mode-vertical rounded-l-lg shadow-lg transition-all z-50 shrink-0 self-center hover:shadow-xl"
           style={{ writingMode: 'vertical-rl' }}
           aria-label="Open AI Tutor"
         >

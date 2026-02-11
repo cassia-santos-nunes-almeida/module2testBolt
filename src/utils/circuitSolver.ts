@@ -23,13 +23,29 @@ export interface CircuitResponse {
   timeConstant?: number;
 }
 
+export type InputType = 'step' | 'impulse';
+
 export function calculateCircuitResponse(
   type: CircuitType,
   params: CircuitParams,
   timeStep: number = 0.0001,
-  duration: number = 0.01
+  duration: number = 0.01,
+  inputType: InputType = 'step'
 ): CircuitResponse {
   const { R, L, C, voltage } = params;
+
+  if (inputType === 'impulse') {
+    switch (type) {
+      case 'RC':
+        return calculateRCImpulseResponse(R, C, voltage, timeStep, duration);
+      case 'RL':
+        return calculateRLImpulseResponse(R, L, voltage, timeStep, duration);
+      case 'RLC':
+        return calculateRLCImpulseResponse(R, L, C, voltage, timeStep, duration);
+      default:
+        return { data: [] };
+    }
+  }
 
   switch (type) {
     case 'RC':
@@ -141,6 +157,76 @@ function calculateRLCResponse(
     omega0,
     zeta,
   };
+}
+
+// Impulse response: h(t) = derivative of step response
+// For RC: v_C(t) = (1/RC) * e^(-t/RC), i(t) = -(1/R²C) * e^(-t/RC) + delta(0)
+function calculateRCImpulseResponse(
+  R: number, C: number, Vs: number, timeStep: number, duration: number
+): CircuitResponse {
+  const tau = R * C;
+  const data: TimeSeriesPoint[] = [];
+  for (let t = 0; t <= duration; t += timeStep) {
+    const v = (Vs / (R * C)) * Math.exp(-t / tau);
+    const i = -(Vs / (R * R * C)) * Math.exp(-t / tau);
+    data.push({ time: t, voltage: v, current: i });
+  }
+  return { data, timeConstant: tau };
+}
+
+function calculateRLImpulseResponse(
+  R: number, L: number, Vs: number, timeStep: number, duration: number
+): CircuitResponse {
+  const tau = L / R;
+  const data: TimeSeriesPoint[] = [];
+  for (let t = 0; t <= duration; t += timeStep) {
+    const i = (Vs / L) * Math.exp(-t / tau);
+    const v = -(Vs * R / L) * Math.exp(-t / tau);
+    data.push({ time: t, voltage: v, current: i });
+  }
+  return { data, timeConstant: tau };
+}
+
+function calculateRLCImpulseResponse(
+  R: number, L: number, C: number, Vs: number, timeStep: number, duration: number
+): CircuitResponse {
+  const alpha = R / (2 * L);
+  const omega0 = 1 / Math.sqrt(L * C);
+  const zeta = alpha / omega0;
+  let dampingType: DampingType;
+  const data: TimeSeriesPoint[] = [];
+
+  if (zeta > 1) {
+    dampingType = 'overdamped';
+    const s1 = -alpha + Math.sqrt(alpha * alpha - omega0 * omega0);
+    const s2 = -alpha - Math.sqrt(alpha * alpha - omega0 * omega0);
+    const scale = Vs * omega0 * omega0;
+    for (let t = 0; t <= duration; t += timeStep) {
+      const v = scale * (Math.exp(s1 * t) - Math.exp(s2 * t)) / (s1 - s2);
+      const i = C * scale * (s1 * Math.exp(s1 * t) - s2 * Math.exp(s2 * t)) / (s1 - s2);
+      data.push({ time: t, voltage: v, current: i });
+    }
+  } else if (Math.abs(zeta - 1) < 0.01) {
+    dampingType = 'critically-damped';
+    const scale = Vs * omega0 * omega0;
+    for (let t = 0; t <= duration; t += timeStep) {
+      const v = scale * t * Math.exp(-alpha * t);
+      const i = C * scale * (1 - alpha * t) * Math.exp(-alpha * t);
+      data.push({ time: t, voltage: v, current: i });
+    }
+  } else {
+    dampingType = 'underdamped';
+    const omegaD = omega0 * Math.sqrt(1 - zeta * zeta);
+    const scale = Vs * omega0 * omega0 / omegaD;
+    for (let t = 0; t <= duration; t += timeStep) {
+      const expTerm = Math.exp(-alpha * t);
+      const v = scale * expTerm * Math.sin(omegaD * t);
+      const i = C * scale * expTerm * (omegaD * Math.cos(omegaD * t) - alpha * Math.sin(omegaD * t));
+      data.push({ time: t, voltage: v, current: i });
+    }
+  }
+
+  return { data, dampingType, alpha, omega0, zeta };
 }
 
 export function calculateTransferFunction(R: number, L: number, C: number): {

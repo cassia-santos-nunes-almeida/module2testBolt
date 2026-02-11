@@ -53,3 +53,19 @@ code {
   border-radius: 0.25rem;
   color: rgb(29 78 216);
 }
+
+/* Consistent range slider styling */
+input[type="range"] {
+  cursor: pointer;
+}
+
+/* Smooth scrolling in main content */
+main {
+  scroll-behavior: smooth;
+}
+
+/* Subtle selection color for engineering theme */
+::selection {
+  background-color: rgba(37, 99, 235, 0.15);
+  color: inherit;
+}
