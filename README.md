@@ -1,73 +1,61 @@
-# React + TypeScript + Vite
+# EM&AC Lab -- Module 2: Circuit Analysis
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive learning platform for electromagnetics and analog circuit analysis. Built for students taking introductory circuit theory courses.
 
-Currently, two official plugins are available:
+**Live Demo:** `https://cassia-santos-nunes-almeida.github.io/module2testBolt/`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## What's Inside
 
-## React Compiler
+| Module | Topics |
+|--------|--------|
+| **Component Physics** | Resistors, capacitors, inductors -- interactive SVG diagrams that respond to physical parameters |
+| **Circuit Analysis** | Time-domain analysis, RC/RL/RLC circuits, differential equations |
+| **Laplace Theory** | Laplace transforms, partial fractions, inverse transforms |
+| **S-Domain Analysis** | Transfer functions, poles & zeros, Bode plots, stability |
+| **Interactive Lab** | Circuit simulations with real-time parameter tuning |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## AI Circuit Tutor (optional)
 
-## Expanding the ESLint configuration
+The app includes an AI-powered tutor sidebar that can answer circuit analysis questions. It uses the **Google Gemini API** (free tier).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+To enable it:
+1. Get a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Click the chat icon in the app sidebar
+3. Paste your key when prompted
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+The key is stored only in your browser's local storage -- it is never sent to any server other than Google's API.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Deploying to GitHub Pages
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+This repo includes a GitHub Actions workflow that auto-deploys on every push to `main`.
+
+**One-time setup:**
+1. Go to your repo on GitHub
+2. Navigate to **Settings > Pages**
+3. Under **Source**, select **GitHub Actions**
+4. Push to `main` -- the site will be live within a couple of minutes
+
+## For Developers
+
+```bash
+# Install dependencies
+npm install
+
+# Start dev server (localhost:5173)
+npm run dev
+
+# Production build
+npm run build
+
+# Preview production build locally
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Tech Stack
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- React 19 + TypeScript
+- Vite
+- Tailwind CSS
+- KaTeX (math rendering)
+- Recharts (data visualization)
+- Google Generative AI (optional, for AI tutor)
