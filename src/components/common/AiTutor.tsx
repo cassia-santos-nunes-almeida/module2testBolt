@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageSquare, Send, Key, PanelRightOpen, PanelLeftClose, X, Maximize2, Minimize2 } from 'lucide-react';
+import { MessageSquare, Send, Key, PanelLeftClose, X, Maximize2 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { MathWrapper } from './MathWrapper';
 

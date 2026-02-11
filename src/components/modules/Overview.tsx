@@ -1,4 +1,4 @@
-import { BookOpen, Target, Compass, AlertTriangle, Scale, Zap, Clock, FunctionSquare, GitBranch, FlaskConical, ArrowRight, Lightbulb } from 'lucide-react';
+import { Target, Compass, AlertTriangle, Scale, Zap, Clock, FunctionSquare, GitBranch, FlaskConical, ArrowRight, Lightbulb } from 'lucide-react';
 import { MathWrapper } from '../common/MathWrapper';
 import { Link } from 'react-router-dom';
 
