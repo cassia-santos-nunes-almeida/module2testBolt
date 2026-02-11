@@ -102,6 +102,7 @@ export function ComponentPhysics() {
   );
 }
 
+/* ─── RESISTOR ─── */
 function ResistorSection({
   length,
   area,
@@ -119,8 +120,13 @@ function ResistorSection({
   onAreaChange: (v: number) => void;
   onResistivityChange: (v: number) => void;
 }) {
+  const bodyW = 40 + length * 100; // 40–240 px
+  const bodyH = Math.max(20 + Math.sqrt(area * 1e6) * 16, 24); // height responds to area
+  const crossR = 8 + Math.sqrt(area * 1e6) * 12; // cross-section radius 8–46
+
   return (
     <div className="grid md:grid-cols-2 gap-6">
+      {/* Left: Theory + Materials */}
       <div className="space-y-6">
         <section className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Theory</h3>
@@ -145,13 +151,11 @@ function ResistorSection({
           </div>
 
           <div className="mt-4 text-sm text-slate-600">
-            <p className="mb-2">
-              <strong>Where:</strong>
-            </p>
+            <p className="mb-2"><strong>Where:</strong></p>
             <ul className="space-y-1 ml-4">
-              <li><MathWrapper formula="\rho" /> = Resistivity (Ω·m)</li>
+              <li><MathWrapper formula="\rho" /> = Resistivity (&Omega;&middot;m)</li>
               <li><MathWrapper formula="L" /> = Length (m)</li>
-              <li><MathWrapper formula="A" /> = Cross-sectional area (m²)</li>
+              <li><MathWrapper formula="A" /> = Cross-sectional area (m&sup2;)</li>
             </ul>
           </div>
         </section>
@@ -163,11 +167,11 @@ function ResistorSection({
               <button
                 key={material.name}
                 onClick={() => onResistivityChange(material.resistivity!)}
-                className="w-full text-left px-4 py-2 rounded bg-slate-50 hover:bg-engineering-blue-50 transition-colors text-sm"
+                className="w-full text-left px-4 py-2 rounded bg-slate-50 hover:bg-red-50 transition-colors text-sm"
               >
                 <span className="font-medium">{material.name}</span>
                 <span className="text-slate-600 ml-2">
-                  ρ = {material.resistivity?.toExponential(2)} Ω·m
+                  &rho; = {material.resistivity?.toExponential(2)} &Omega;&middot;m
                 </span>
               </button>
             ))}
@@ -175,71 +179,13 @@ function ResistorSection({
         </section>
       </div>
 
+      {/* Right: Circuit Symbol → Diagrams → Sliders → Result */}
       <div className="space-y-6">
         <section className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-semibold text-slate-900 mb-4">Visual Representation</h3>
-
-          <div className="bg-slate-50 p-6 rounded-lg mb-6">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Physical Structure</p>
-            <svg viewBox="0 0 400 180" className="w-full">
-              <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-                  <polygon points="0 0, 10 5, 0 10" fill="#64748b" />
-                </marker>
-                <linearGradient id="resistorBody" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#fbbf24" />
-                  <stop offset="50%" stopColor="#d97706" />
-                  <stop offset="100%" stopColor="#b45309" />
-                </linearGradient>
-              </defs>
-
-              {/* Wire leads */}
-              <line x1="20" y1="90" x2="80" y2="90" stroke="#1e40af" strokeWidth="3" />
-              <line x1={80 + length * 120} y1="90" x2={80 + length * 120 + 60} y2="90" stroke="#1e40af" strokeWidth="3" />
-
-              {/* Resistor body - rounded rectangle */}
-              {(() => {
-                const h = Math.max(Math.sqrt(area * 1e6) * 35, 24);
-                const w = length * 120;
-                return (
-                  <>
-                    <rect x="80" y={90 - h / 2} width={w} height={h} rx="6" ry="6" fill="url(#resistorBody)" stroke="#92400e" strokeWidth="2" />
-                    {/* Color bands */}
-                    <rect x={80 + w * 0.15} y={90 - h / 2 + 2} width={w * 0.06} height={h - 4} rx="1" fill="#b91c1c" opacity="0.8" />
-                    <rect x={80 + w * 0.28} y={90 - h / 2 + 2} width={w * 0.06} height={h - 4} rx="1" fill="#7c3aed" opacity="0.8" />
-                    <rect x={80 + w * 0.41} y={90 - h / 2 + 2} width={w * 0.06} height={h - 4} rx="1" fill="#b45309" opacity="0.8" />
-                    <rect x={80 + w * 0.70} y={90 - h / 2 + 2} width={w * 0.06} height={h - 4} rx="1" fill="#d4af37" opacity="0.8" />
-
-                    {/* Length dimension line */}
-                    <line x1="80" y1={90 - h / 2 - 14} x2={80 + w} y2={90 - h / 2 - 14} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowhead)" />
-                    <line x1="80" y1={90 - h / 2 - 20} x2="80" y2={90 - h / 2 - 8} stroke="#64748b" strokeWidth="0.5" />
-                    <line x1={80 + w} y1={90 - h / 2 - 20} x2={80 + w} y2={90 - h / 2 - 8} stroke="#64748b" strokeWidth="0.5" />
-                    <text x={80 + w / 2} y={90 - h / 2 - 22} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">L</text>
-
-                    {/* Area dimension */}
-                    <line x1={80 + w + 70} y1={90 - h / 2} x2={80 + w + 70} y2={90 + h / 2} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowhead)" />
-                    <line x1={80 + w + 64} y1={90 - h / 2} x2={80 + w + 76} y2={90 - h / 2} stroke="#64748b" strokeWidth="0.5" />
-                    <line x1={80 + w + 64} y1={90 + h / 2} x2={80 + w + 76} y2={90 + h / 2} stroke="#64748b" strokeWidth="0.5" />
-                    <text x={80 + w + 82} y={93} textAnchor="start" className="text-xs fill-slate-600" fontStyle="italic">A</text>
-                  </>
-                );
-              })()}
-
-              {/* Current arrow */}
-              <line x1="30" y1="130" x2="65" y2="130" stroke="#dc2626" strokeWidth="2" markerEnd="url(#arrowRed)" />
-              <text x="48" y="148" textAnchor="middle" className="text-xs fill-red-600" fontStyle="italic">i</text>
-              <defs>
-                <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-                  <polygon points="0 1, 8 4, 0 7" fill="#dc2626" />
-                </marker>
-              </defs>
-            </svg>
-          </div>
-
-          <div className="bg-slate-50 p-4 rounded-lg mb-6">
+          {/* 1. Circuit Symbol */}
+          <div className="bg-slate-50 p-4 rounded-lg mb-5">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Circuit Symbol</p>
             <svg viewBox="0 0 280 60" className="w-full max-w-xs mx-auto">
-              {/* Zigzag resistor symbol */}
               <line x1="20" y1="30" x2="60" y2="30" stroke="#1e40af" strokeWidth="2.5" />
               <polyline points="60,30 72,10 96,50 120,10 144,50 168,10 192,50 204,30" fill="none" stroke="#1e40af" strokeWidth="2.5" strokeLinejoin="round" />
               <line x1="204" y1="30" x2="260" y2="30" stroke="#1e40af" strokeWidth="2.5" />
@@ -247,58 +193,103 @@ function ResistorSection({
             </svg>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Length: {length.toFixed(2)} m
-              </label>
-              <input
-                type="range"
-                min="0.1"
-                max="2"
-                step="0.1"
-                value={length}
-                onChange={(e) => onLengthChange(parseFloat(e.target.value))}
-                className="w-full"
-              />
+          {/* 2. Engineering Drawing: Side View + Cross-Section */}
+          <div className="bg-slate-50 p-4 rounded-lg mb-5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Physical Structure</p>
+
+            {/* Side view (longitudinal) */}
+            <div className="mb-3">
+              <p className="text-[10px] text-slate-400 font-medium mb-1 uppercase tracking-wider">Side View</p>
+              <svg viewBox="0 0 400 140" className="w-full">
+                <defs>
+                  <marker id="rArrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                    <polygon points="0 1, 8 4, 0 7" fill="#64748b" />
+                  </marker>
+                  <linearGradient id="rBody" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fbbf24" />
+                    <stop offset="50%" stopColor="#d97706" />
+                    <stop offset="100%" stopColor="#b45309" />
+                  </linearGradient>
+                  <marker id="rArrowRed" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                    <polygon points="0 1, 8 4, 0 7" fill="#dc2626" />
+                  </marker>
+                </defs>
+
+                {/* Wire leads */}
+                <line x1="20" y1="70" x2="80" y2="70" stroke="#1e40af" strokeWidth="3" />
+                <line x1={80 + bodyW} y1="70" x2={80 + bodyW + 50} y2="70" stroke="#1e40af" strokeWidth="3" />
+
+                {/* Body */}
+                <rect x="80" y={70 - bodyH / 2} width={bodyW} height={bodyH} rx="5" fill="url(#rBody)" stroke="#92400e" strokeWidth="1.5" />
+
+                {/* Color bands */}
+                <rect x={80 + bodyW * 0.15} y={70 - bodyH / 2 + 2} width={bodyW * 0.05} height={bodyH - 4} rx="1" fill="#b91c1c" opacity="0.8" />
+                <rect x={80 + bodyW * 0.28} y={70 - bodyH / 2 + 2} width={bodyW * 0.05} height={bodyH - 4} rx="1" fill="#7c3aed" opacity="0.8" />
+                <rect x={80 + bodyW * 0.41} y={70 - bodyH / 2 + 2} width={bodyW * 0.05} height={bodyH - 4} rx="1" fill="#b45309" opacity="0.8" />
+                <rect x={80 + bodyW * 0.70} y={70 - bodyH / 2 + 2} width={bodyW * 0.05} height={bodyH - 4} rx="1" fill="#d4af37" opacity="0.8" />
+
+                {/* Length dimension */}
+                <line x1="80" y1={70 - bodyH / 2 - 14} x2={80 + bodyW} y2={70 - bodyH / 2 - 14} stroke="#64748b" strokeWidth="1" markerEnd="url(#rArrow)" />
+                <line x1="80" y1={70 - bodyH / 2 - 20} x2="80" y2={70 - bodyH / 2 - 8} stroke="#64748b" strokeWidth="0.5" />
+                <line x1={80 + bodyW} y1={70 - bodyH / 2 - 20} x2={80 + bodyW} y2={70 - bodyH / 2 - 8} stroke="#64748b" strokeWidth="0.5" />
+                <text x={80 + bodyW / 2} y={70 - bodyH / 2 - 22} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">L</text>
+
+                {/* Cross-section cut line */}
+                <line x1={80 + bodyW + 16} y1={70 - bodyH / 2 - 6} x2={80 + bodyW + 16} y2={70 + bodyH / 2 + 6} stroke="#94a3b8" strokeWidth="1" strokeDasharray="4,2" />
+                <text x={80 + bodyW + 16} y={70 + bodyH / 2 + 18} textAnchor="middle" className="fill-slate-400" style={{ fontSize: '9px' }}>A-A</text>
+
+                {/* Current arrow */}
+                <line x1="30" y1="105" x2="65" y2="105" stroke="#dc2626" strokeWidth="2" markerEnd="url(#rArrowRed)" />
+                <text x="48" y="120" textAnchor="middle" className="text-xs fill-red-600" fontStyle="italic">i</text>
+              </svg>
             </div>
 
+            {/* Front view (cross-section) */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Area: {(area * 1e6).toFixed(2)} mm²
-              </label>
-              <input
-                type="range"
-                min="0.1"
-                max="10"
-                step="0.1"
-                value={area * 1e6}
-                onChange={(e) => onAreaChange(parseFloat(e.target.value) * 1e-6)}
-                className="w-full"
-              />
-            </div>
+              <p className="text-[10px] text-slate-400 font-medium mb-1 uppercase tracking-wider">Cross-Section A-A (shows area <em>A</em>)</p>
+              <svg viewBox="0 0 180 140" className="w-full max-w-[200px] mx-auto">
+                {/* Outer body circle */}
+                <circle cx="90" cy="65" r={crossR + 8} fill="#d97706" stroke="#92400e" strokeWidth="1.5" opacity="0.3" />
+                {/* Conductor cross-section */}
+                <circle cx="90" cy="65" r={crossR} fill="#f59e0b" stroke="#92400e" strokeWidth="1.5" />
+                <text x="90" y={65 + 4} textAnchor="middle" className="fill-white font-bold" style={{ fontSize: '11px' }}>A</text>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Resistivity: {resistivity.toExponential(2)} Ω·m
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="100"
-                step="1"
-                value={resistivity * 1e8}
-                onChange={(e) => onResistivityChange(parseFloat(e.target.value) * 1e-8)}
-                className="w-full"
-              />
+                {/* Dimension line for radius */}
+                <line x1="90" y1="65" x2={90 + crossR} y2="65" stroke="#64748b" strokeWidth="1" />
+                <line x1={90 + crossR} y1="58" x2={90 + crossR} y2="72" stroke="#64748b" strokeWidth="0.5" />
+                <text x={90 + crossR / 2} y="58" textAnchor="middle" className="fill-slate-500" style={{ fontSize: '9px' }}>r</text>
+
+                <text x="90" y="130" textAnchor="middle" className="text-xs fill-slate-500">{(area * 1e6).toFixed(2)} mm&sup2;</text>
+              </svg>
             </div>
           </div>
 
-          <div className="mt-6 bg-red-50 p-4 rounded-lg border border-red-100">
+          {/* 3. Sliders */}
+          <div className="space-y-4 mb-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Length: <span className="text-red-600 font-semibold">{length.toFixed(2)} m</span>
+              </label>
+              <input type="range" min="0.1" max="2" step="0.1" value={length} onChange={(e) => onLengthChange(parseFloat(e.target.value))} className="w-full accent-red-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Area: <span className="text-red-600 font-semibold">{(area * 1e6).toFixed(2)} mm&sup2;</span>
+              </label>
+              <input type="range" min="0.1" max="10" step="0.1" value={area * 1e6} onChange={(e) => onAreaChange(parseFloat(e.target.value) * 1e-6)} className="w-full accent-red-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Resistivity: <span className="text-red-600 font-semibold">{resistivity.toExponential(2)} &Omega;&middot;m</span>
+              </label>
+              <input type="range" min="1" max="100" step="1" value={resistivity * 1e8} onChange={(e) => onResistivityChange(parseFloat(e.target.value) * 1e-8)} className="w-full accent-red-500" />
+            </div>
+          </div>
+
+          {/* 4. Result */}
+          <div className="bg-red-50 p-4 rounded-lg border border-red-100">
             <p className="text-sm font-semibold text-red-900 mb-1">Calculated Resistance:</p>
-            <p className="text-3xl font-bold text-red-700">
-              {resistance.toFixed(3)} &#937;
-            </p>
+            <p className="text-3xl font-bold text-red-700">{resistance.toFixed(3)} &#937;</p>
           </div>
         </section>
       </div>
@@ -306,6 +297,7 @@ function ResistorSection({
   );
 }
 
+/* ─── CAPACITOR ─── */
 function CapacitorSection({
   area,
   distance,
@@ -323,8 +315,21 @@ function CapacitorSection({
   onDistanceChange: (v: number) => void;
   onPermittivityChange: (v: number) => void;
 }) {
+  // Normalized to slider ranges so SVG visibly changes
+  // area: 0.005–0.10 (slider 0.5–10 cm²), distance: 0.0001–0.005 (slider 0.1–5 mm)
+  const areaNorm = (area - 0.005) / (0.10 - 0.005);   // 0 → 1
+  const distNorm = (distance - 0.0001) / (0.005 - 0.0001); // 0 → 1
+  const plateH = 40 + areaNorm * 90;   // 40–130 px
+  const gap = 25 + distNorm * 80;      // 25–105 px
+  const plateFaceSize = 30 + areaNorm * 70; // 30–100 for cross-section
+
+  const plateX1 = 160;
+  const plateX2 = plateX1 + gap;
+  const cy = 90;
+
   return (
     <div className="grid md:grid-cols-2 gap-6">
+      {/* Left: Theory + Materials */}
       <div className="space-y-6">
         <section className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Theory</h3>
@@ -354,12 +359,10 @@ function CapacitorSection({
           </div>
 
           <div className="mt-4 text-sm text-slate-600">
-            <p className="mb-2">
-              <strong>Where:</strong>
-            </p>
+            <p className="mb-2"><strong>Where:</strong></p>
             <ul className="space-y-1 ml-4">
               <li><MathWrapper formula="\epsilon" /> = Permittivity (F/m)</li>
-              <li><MathWrapper formula="A" /> = Plate area (m²)</li>
+              <li><MathWrapper formula="A" /> = Plate area (m&sup2;)</li>
               <li><MathWrapper formula="d" /> = Separation distance (m)</li>
             </ul>
           </div>
@@ -372,11 +375,11 @@ function CapacitorSection({
               <button
                 key={material.name}
                 onClick={() => onPermittivityChange(material.permittivity!)}
-                className="w-full text-left px-4 py-2 rounded bg-slate-50 hover:bg-engineering-blue-50 transition-colors text-sm"
+                className="w-full text-left px-4 py-2 rounded bg-slate-50 hover:bg-green-50 transition-colors text-sm"
               >
                 <span className="font-medium">{material.name}</span>
                 <span className="text-slate-600 ml-2">
-                  ε = {material.permittivity?.toExponential(2)} F/m
+                  &epsilon; = {material.permittivity?.toExponential(2)} F/m
                 </span>
               </button>
             ))}
@@ -384,96 +387,13 @@ function CapacitorSection({
         </section>
       </div>
 
+      {/* Right: Circuit Symbol → Diagrams → Sliders → Result */}
       <div className="space-y-6">
         <section className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-semibold text-slate-900 mb-4">Visual Representation</h3>
-
-          <div className="bg-slate-50 p-6 rounded-lg mb-6">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Physical Structure</p>
-            <svg viewBox="0 0 400 200" className="w-full">
-              <defs>
-                <marker id="arrowCapDim" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-                  <polygon points="0 1, 8 4, 0 7" fill="#64748b" />
-                </marker>
-                <linearGradient id="plateFill" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#60a5fa" />
-                  <stop offset="100%" stopColor="#2563eb" />
-                </linearGradient>
-              </defs>
-
-              {(() => {
-                const plateH = Math.max(Math.sqrt(area) * 80, 50);
-                const gap = Math.max(distance * 400, 30);
-                const plateX1 = 160;
-                const plateX2 = plateX1 + gap;
-                const cy = 100;
-
-                return (
-                  <>
-                    {/* Wire leads */}
-                    <line x1="60" y1={cy} x2={plateX1} y2={cy} stroke="#1e40af" strokeWidth="3" />
-                    <line x1={plateX2 + 12} y1={cy} x2="360" y2={cy} stroke="#1e40af" strokeWidth="3" />
-
-                    {/* Plates */}
-                    <rect x={plateX1 - 12} y={cy - plateH / 2} width="12" height={plateH} rx="2" fill="url(#plateFill)" stroke="#1e40af" strokeWidth="1.5" />
-                    <rect x={plateX2} y={cy - plateH / 2} width="12" height={plateH} rx="2" fill="url(#plateFill)" stroke="#1e40af" strokeWidth="1.5" />
-
-                    {/* Dielectric fill between plates */}
-                    <rect x={plateX1} y={cy - plateH / 2} width={gap} height={plateH} fill="#fef3c7" opacity="0.6" />
-
-                    {/* Electric field arrows between plates */}
-                    {[-2, -1, 0, 1, 2].map((offset) => (
-                      <line
-                        key={offset}
-                        x1={plateX1 + 4}
-                        y1={cy + offset * (plateH / 6)}
-                        x2={plateX2 - 2}
-                        y2={cy + offset * (plateH / 6)}
-                        stroke="#dc2626"
-                        strokeWidth="1"
-                        strokeDasharray="4,3"
-                        markerEnd="url(#arrowEField)"
-                      />
-                    ))}
-
-                    {/* Charge symbols */}
-                    {[-2, -1, 0, 1, 2].map((offset) => (
-                      <g key={`charge-${offset}`}>
-                        <text x={plateX1 - 18} y={cy + offset * (plateH / 6) + 4} textAnchor="middle" className="text-xs font-bold" fill="#2563eb">+</text>
-                        <text x={plateX2 + 18} y={cy + offset * (plateH / 6) + 4} textAnchor="middle" className="text-xs font-bold" fill="#2563eb">&minus;</text>
-                      </g>
-                    ))}
-
-                    {/* Dimension: distance (d) */}
-                    <line x1={plateX1} y1={cy + plateH / 2 + 16} x2={plateX2 + 12} y2={cy + plateH / 2 + 16} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowCapDim)" />
-                    <line x1={plateX1} y1={cy + plateH / 2 + 10} x2={plateX1} y2={cy + plateH / 2 + 22} stroke="#64748b" strokeWidth="0.5" />
-                    <line x1={plateX2 + 12} y1={cy + plateH / 2 + 10} x2={plateX2 + 12} y2={cy + plateH / 2 + 22} stroke="#64748b" strokeWidth="0.5" />
-                    <text x={(plateX1 + plateX2 + 12) / 2} y={cy + plateH / 2 + 32} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">d</text>
-
-                    {/* Dimension: area */}
-                    <line x1={plateX1 - 30} y1={cy - plateH / 2} x2={plateX1 - 30} y2={cy + plateH / 2} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowCapDim)" />
-                    <line x1={plateX1 - 36} y1={cy - plateH / 2} x2={plateX1 - 24} y2={cy - plateH / 2} stroke="#64748b" strokeWidth="0.5" />
-                    <line x1={plateX1 - 36} y1={cy + plateH / 2} x2={plateX1 - 24} y2={cy + plateH / 2} stroke="#64748b" strokeWidth="0.5" />
-                    <text x={plateX1 - 42} y={cy + 4} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">A</text>
-
-                    {/* E-field label */}
-                    <text x={(plateX1 + plateX2) / 2 + 6} y={cy - plateH / 2 + 14} textAnchor="middle" className="text-xs fill-red-500 font-medium">E field</text>
-                  </>
-                );
-              })()}
-
-              <defs>
-                <marker id="arrowEField" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-                  <polygon points="0 0.5, 6 3, 0 5.5" fill="#dc2626" />
-                </marker>
-              </defs>
-            </svg>
-          </div>
-
-          <div className="bg-slate-50 p-4 rounded-lg mb-6">
+          {/* 1. Circuit Symbol */}
+          <div className="bg-slate-50 p-4 rounded-lg mb-5">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Circuit Symbol</p>
             <svg viewBox="0 0 280 60" className="w-full max-w-xs mx-auto">
-              {/* Standard capacitor symbol - two parallel lines */}
               <line x1="20" y1="30" x2="120" y2="30" stroke="#1e40af" strokeWidth="2.5" />
               <line x1="120" y1="8" x2="120" y2="52" stroke="#1e40af" strokeWidth="3" />
               <line x1="136" y1="8" x2="136" y2="52" stroke="#1e40af" strokeWidth="3" />
@@ -482,58 +402,144 @@ function CapacitorSection({
             </svg>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Plate Area: {(area * 100).toFixed(2)} cm²
-              </label>
-              <input
-                type="range"
-                min="0.5"
-                max="10"
-                step="0.5"
-                value={area * 100}
-                onChange={(e) => onAreaChange(parseFloat(e.target.value) / 100)}
-                className="w-full"
-              />
+          {/* 2. Engineering Drawing: Side View + Front View */}
+          <div className="bg-slate-50 p-4 rounded-lg mb-5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Physical Structure</p>
+
+            {/* Side view */}
+            <div className="mb-3">
+              <p className="text-[10px] text-slate-400 font-medium mb-1 uppercase tracking-wider">Side View (showing gap <em>d</em> and plate height)</p>
+              <svg viewBox="0 0 400 200" className="w-full">
+                <defs>
+                  <marker id="cArrowDim" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                    <polygon points="0 1, 8 4, 0 7" fill="#64748b" />
+                  </marker>
+                  <marker id="cArrowE" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                    <polygon points="0 0.5, 6 3, 0 5.5" fill="#dc2626" />
+                  </marker>
+                  <linearGradient id="cPlate" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#60a5fa" />
+                    <stop offset="100%" stopColor="#2563eb" />
+                  </linearGradient>
+                </defs>
+
+                {/* Wire leads */}
+                <line x1="60" y1={cy} x2={plateX1} y2={cy} stroke="#1e40af" strokeWidth="3" />
+                <line x1={plateX2 + 12} y1={cy} x2="360" y2={cy} stroke="#1e40af" strokeWidth="3" />
+
+                {/* Plates */}
+                <rect x={plateX1 - 12} y={cy - plateH / 2} width="12" height={plateH} rx="2" fill="url(#cPlate)" stroke="#1e40af" strokeWidth="1.5" />
+                <rect x={plateX2} y={cy - plateH / 2} width="12" height={plateH} rx="2" fill="url(#cPlate)" stroke="#1e40af" strokeWidth="1.5" />
+
+                {/* Dielectric fill */}
+                <rect x={plateX1} y={cy - plateH / 2} width={gap} height={plateH} fill="#fef3c7" opacity="0.5" />
+
+                {/* Electric field arrows */}
+                {[-2, -1, 0, 1, 2].filter(o => Math.abs(o) * (plateH / 6) < plateH / 2 - 4).map((offset) => (
+                  <line
+                    key={offset}
+                    x1={plateX1 + 4}
+                    y1={cy + offset * (plateH / 6)}
+                    x2={plateX2 - 2}
+                    y2={cy + offset * (plateH / 6)}
+                    stroke="#dc2626"
+                    strokeWidth="1"
+                    strokeDasharray="4,3"
+                    markerEnd="url(#cArrowE)"
+                  />
+                ))}
+
+                {/* Charge symbols */}
+                {[-2, -1, 0, 1, 2].filter(o => Math.abs(o) * (plateH / 6) < plateH / 2 - 4).map((offset) => (
+                  <g key={`ch-${offset}`}>
+                    <text x={plateX1 - 18} y={cy + offset * (plateH / 6) + 4} textAnchor="middle" className="text-xs font-bold" fill="#2563eb">+</text>
+                    <text x={plateX2 + 18} y={cy + offset * (plateH / 6) + 4} textAnchor="middle" className="text-xs font-bold" fill="#2563eb">&minus;</text>
+                  </g>
+                ))}
+
+                {/* Dimension: gap d */}
+                <line x1={plateX1} y1={cy + plateH / 2 + 16} x2={plateX2 + 12} y2={cy + plateH / 2 + 16} stroke="#64748b" strokeWidth="1" markerEnd="url(#cArrowDim)" />
+                <line x1={plateX1} y1={cy + plateH / 2 + 10} x2={plateX1} y2={cy + plateH / 2 + 22} stroke="#64748b" strokeWidth="0.5" />
+                <line x1={plateX2 + 12} y1={cy + plateH / 2 + 10} x2={plateX2 + 12} y2={cy + plateH / 2 + 22} stroke="#64748b" strokeWidth="0.5" />
+                <text x={(plateX1 + plateX2 + 12) / 2} y={cy + plateH / 2 + 32} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">d</text>
+
+                {/* Dimension: plate height (represents A) */}
+                <line x1={plateX1 - 30} y1={cy - plateH / 2} x2={plateX1 - 30} y2={cy + plateH / 2} stroke="#64748b" strokeWidth="1" markerEnd="url(#cArrowDim)" />
+                <line x1={plateX1 - 36} y1={cy - plateH / 2} x2={plateX1 - 24} y2={cy - plateH / 2} stroke="#64748b" strokeWidth="0.5" />
+                <line x1={plateX1 - 36} y1={cy + plateH / 2} x2={plateX1 - 24} y2={cy + plateH / 2} stroke="#64748b" strokeWidth="0.5" />
+                <text x={plateX1 - 42} y={cy + 4} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">A</text>
+
+                {/* E-field label */}
+                <text x={(plateX1 + plateX2) / 2 + 6} y={cy - plateH / 2 + 12} textAnchor="middle" className="text-xs fill-red-500 font-medium">E field</text>
+              </svg>
             </div>
 
+            {/* Front view (plate face) */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Distance: {(distance * 1000).toFixed(2)} mm
-              </label>
-              <input
-                type="range"
-                min="0.1"
-                max="5"
-                step="0.1"
-                value={distance * 1000}
-                onChange={(e) => onDistanceChange(parseFloat(e.target.value) / 1000)}
-                className="w-full"
-              />
-            </div>
+              <p className="text-[10px] text-slate-400 font-medium mb-1 uppercase tracking-wider">Front View (plate face, area <em>A</em>)</p>
+              <svg viewBox="0 0 180 150" className="w-full max-w-[200px] mx-auto">
+                {/* Plate face as square */}
+                <rect
+                  x={90 - plateFaceSize / 2}
+                  y={68 - plateFaceSize / 2}
+                  width={plateFaceSize}
+                  height={plateFaceSize}
+                  rx="3"
+                  fill="#93c5fd"
+                  stroke="#2563eb"
+                  strokeWidth="1.5"
+                />
+                <text x="90" y={72} textAnchor="middle" className="fill-blue-900 font-bold" style={{ fontSize: '11px' }}>A</text>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Permittivity: {permittivity.toExponential(2)} F/m
-              </label>
-              <input
-                type="range"
-                min="8.854"
-                max="40"
-                step="0.1"
-                value={permittivity * 1e12}
-                onChange={(e) => onPermittivityChange(parseFloat(e.target.value) * 1e-12)}
-                className="w-full"
-              />
+                {/* Charge symbols on face */}
+                {[-1, 0, 1].map(r => [-1, 0, 1].map(c => (
+                  <text
+                    key={`${r}-${c}`}
+                    x={90 + c * (plateFaceSize * 0.28)}
+                    y={68 + r * (plateFaceSize * 0.28) + 3}
+                    textAnchor="middle"
+                    fill="#1e40af"
+                    opacity="0.4"
+                    style={{ fontSize: '10px' }}
+                  >+</text>
+                )))}
+
+                {/* Width dimension */}
+                <line x1={90 - plateFaceSize / 2} y1={68 + plateFaceSize / 2 + 12} x2={90 + plateFaceSize / 2} y2={68 + plateFaceSize / 2 + 12} stroke="#64748b" strokeWidth="0.8" />
+                <line x1={90 - plateFaceSize / 2} y1={68 + plateFaceSize / 2 + 7} x2={90 - plateFaceSize / 2} y2={68 + plateFaceSize / 2 + 17} stroke="#64748b" strokeWidth="0.5" />
+                <line x1={90 + plateFaceSize / 2} y1={68 + plateFaceSize / 2 + 7} x2={90 + plateFaceSize / 2} y2={68 + plateFaceSize / 2 + 17} stroke="#64748b" strokeWidth="0.5" />
+
+                <text x="90" y="145" textAnchor="middle" className="text-xs fill-slate-500">{(area * 10000).toFixed(2)} cm&sup2;</text>
+              </svg>
             </div>
           </div>
 
-          <div className="mt-6 bg-green-50 p-4 rounded-lg border border-green-100">
+          {/* 3. Sliders */}
+          <div className="space-y-4 mb-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Plate Area: <span className="text-green-600 font-semibold">{(area * 10000).toFixed(2)} cm&sup2;</span>
+              </label>
+              <input type="range" min="0.5" max="10" step="0.5" value={area * 10000} onChange={(e) => onAreaChange(parseFloat(e.target.value) / 10000)} className="w-full accent-green-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Distance: <span className="text-green-600 font-semibold">{(distance * 1000).toFixed(2)} mm</span>
+              </label>
+              <input type="range" min="0.1" max="5" step="0.1" value={distance * 1000} onChange={(e) => onDistanceChange(parseFloat(e.target.value) / 1000)} className="w-full accent-green-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Permittivity: <span className="text-green-600 font-semibold">{permittivity.toExponential(2)} F/m</span>
+              </label>
+              <input type="range" min="8.854" max="40" step="0.1" value={permittivity * 1e12} onChange={(e) => onPermittivityChange(parseFloat(e.target.value) * 1e-12)} className="w-full accent-green-500" />
+            </div>
+          </div>
+
+          {/* 4. Result */}
+          <div className="bg-green-50 p-4 rounded-lg border border-green-100">
             <p className="text-sm font-semibold text-green-900 mb-1">Calculated Capacitance:</p>
-            <p className="text-3xl font-bold text-green-700">
-              {(capacitance * 1e12).toFixed(2)} pF
-            </p>
+            <p className="text-3xl font-bold text-green-700">{(capacitance * 1e12).toFixed(2)} pF</p>
           </div>
         </section>
       </div>
@@ -541,6 +547,7 @@ function CapacitorSection({
   );
 }
 
+/* ─── INDUCTOR ─── */
 function InductorSection({
   turns,
   area,
@@ -562,8 +569,13 @@ function InductorSection({
   onLengthChange: (v: number) => void;
   onPermeabilityChange: (v: number) => void;
 }) {
+  const coilR = Math.max(Math.sqrt(area * 10000) * 35, 18); // ellipse ry, 18–70
+  const coilW = length * 500; // total coil width px
+  const crossR = Math.max(Math.sqrt(area * 10000) * 30, 14); // cross-section radius
+
   return (
     <div className="grid md:grid-cols-2 gap-6">
+      {/* Left: Theory + Materials */}
       <div className="space-y-6">
         <section className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Theory</h3>
@@ -593,13 +605,11 @@ function InductorSection({
           </div>
 
           <div className="mt-4 text-sm text-slate-600">
-            <p className="mb-2">
-              <strong>Where:</strong>
-            </p>
+            <p className="mb-2"><strong>Where:</strong></p>
             <ul className="space-y-1 ml-4">
               <li><MathWrapper formula="N" /> = Number of turns</li>
               <li><MathWrapper formula="\mu" /> = Permeability (H/m)</li>
-              <li><MathWrapper formula="A" /> = Core area (m²)</li>
+              <li><MathWrapper formula="A" /> = Core area (m&sup2;)</li>
               <li><MathWrapper formula="l" /> = Coil length (m)</li>
             </ul>
           </div>
@@ -612,88 +622,32 @@ function InductorSection({
               <button
                 key={material.name}
                 onClick={() => onPermeabilityChange(material.permeability!)}
-                className="w-full text-left px-4 py-2 rounded bg-slate-50 hover:bg-engineering-blue-50 transition-colors text-sm"
+                className="w-full text-left px-4 py-2 rounded bg-slate-50 hover:bg-purple-50 transition-colors text-sm"
               >
                 <span className="font-medium">{material.name}</span>
                 <span className="text-slate-600 ml-2">
-                  μ = {material.permeability?.toExponential(2)} H/m
+                  &mu; = {material.permeability?.toExponential(2)} H/m
                 </span>
               </button>
             ))}
             <button
               onClick={() => onPermeabilityChange(6.3e-3)}
-              className="w-full text-left px-4 py-2 rounded bg-slate-50 hover:bg-engineering-blue-50 transition-colors text-sm"
+              className="w-full text-left px-4 py-2 rounded bg-slate-50 hover:bg-purple-50 transition-colors text-sm"
             >
               <span className="font-medium">Iron Core</span>
-              <span className="text-slate-600 ml-2">
-                μ = 6.30e-3 H/m
-              </span>
+              <span className="text-slate-600 ml-2">&mu; = 6.30e-3 H/m</span>
             </button>
           </div>
         </section>
       </div>
 
+      {/* Right: Circuit Symbol → Diagrams → Sliders → Result */}
       <div className="space-y-6">
         <section className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-semibold text-slate-900 mb-4">Visual Representation</h3>
-
-          <div className="bg-slate-50 p-6 rounded-lg mb-6">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Physical Structure</p>
-            <svg viewBox="0 0 400 200" className="w-full">
-              <defs>
-                <marker id="arrowIndDim" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-                  <polygon points="0 1, 8 4, 0 7" fill="#64748b" />
-                </marker>
-              </defs>
-
-              {/* Wire leads */}
-              <line x1="40" y1="100" x2="95" y2="100" stroke="#1e40af" strokeWidth="3" />
-              <line x1={105 + length * 500} y1="100" x2={105 + length * 500 + 55} y2="100" stroke="#1e40af" strokeWidth="3" />
-
-              {Array.from({ length: Math.min(turns, 20) }).map((_, i) => {
-                const x = 100 + (i * length * 500) / Math.min(turns, 20);
-                return (
-                  <ellipse
-                    key={i}
-                    cx={x}
-                    cy="100"
-                    rx="15"
-                    ry={Math.sqrt(area * 1000) * 40}
-                    fill="none"
-                    stroke="#059669"
-                    strokeWidth="3"
-                  />
-                );
-              })}
-
-              {/* Length dimension */}
-              {(() => {
-                const coilR = Math.sqrt(area * 1000) * 40;
-                return (
-                  <>
-                    <line x1="100" y1={100 - coilR - 14} x2={100 + length * 500} y2={100 - coilR - 14} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowIndDim)" />
-                    <line x1="100" y1={100 - coilR - 20} x2="100" y2={100 - coilR - 8} stroke="#64748b" strokeWidth="0.5" />
-                    <line x1={100 + length * 500} y1={100 - coilR - 20} x2={100 + length * 500} y2={100 - coilR - 8} stroke="#64748b" strokeWidth="0.5" />
-                    <text x={100 + (length * 500) / 2} y={100 - coilR - 22} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">l</text>
-
-                    {/* Area dimension */}
-                    <line x1="70" y1={100 - coilR} x2="70" y2={100 + coilR} stroke="#64748b" strokeWidth="1" markerEnd="url(#arrowIndDim)" />
-                    <line x1="64" y1={100 - coilR} x2="76" y2={100 - coilR} stroke="#64748b" strokeWidth="0.5" />
-                    <line x1="64" y1={100 + coilR} x2="76" y2={100 + coilR} stroke="#64748b" strokeWidth="0.5" />
-                    <text x="52" y="103" textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">A</text>
-                  </>
-                );
-              })()}
-            </svg>
-            <p className="text-center text-xs text-slate-600 mt-2">
-              Number of turns: {turns} {turns > 20 && '(showing 20)'}
-            </p>
-          </div>
-
-          <div className="bg-slate-50 p-4 rounded-lg mb-6">
+          {/* 1. Circuit Symbol */}
+          <div className="bg-slate-50 p-4 rounded-lg mb-5">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Circuit Symbol</p>
             <svg viewBox="0 0 280 60" className="w-full max-w-xs mx-auto">
-              {/* Standard inductor symbol - series of bumps/arcs */}
               <line x1="20" y1="35" x2="60" y2="35" stroke="#059669" strokeWidth="2.5" />
               <path d="M60,35 C60,15 80,15 80,35 C80,15 100,15 100,35 C100,15 120,15 120,35 C120,15 140,15 140,35 C140,15 160,15 160,35 C160,15 180,15 180,35" fill="none" stroke="#059669" strokeWidth="2.5" />
               <line x1="180" y1="35" x2="260" y2="35" stroke="#059669" strokeWidth="2.5" />
@@ -701,73 +655,110 @@ function InductorSection({
             </svg>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Number of Turns: {turns}
-              </label>
-              <input
-                type="range"
-                min="10"
-                max="500"
-                step="10"
-                value={turns}
-                onChange={(e) => onTurnsChange(parseFloat(e.target.value))}
-                className="w-full"
-              />
+          {/* 2. Engineering Drawing: Side View + Cross-Section */}
+          <div className="bg-slate-50 p-4 rounded-lg mb-5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Physical Structure</p>
+
+            {/* Side view */}
+            <div className="mb-3">
+              <p className="text-[10px] text-slate-400 font-medium mb-1 uppercase tracking-wider">Side View (shows turns <em>N</em> and length <em>l</em>)</p>
+              <svg viewBox="0 0 400 200" className="w-full">
+                <defs>
+                  <marker id="iArrowDim" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                    <polygon points="0 1, 8 4, 0 7" fill="#64748b" />
+                  </marker>
+                </defs>
+
+                {/* Wire leads */}
+                <line x1="40" y1="100" x2="95" y2="100" stroke="#1e40af" strokeWidth="3" />
+                <line x1={105 + coilW} y1="100" x2={105 + coilW + 55} y2="100" stroke="#1e40af" strokeWidth="3" />
+
+                {/* Coil turns */}
+                {Array.from({ length: Math.min(turns, 20) }).map((_, i) => {
+                  const x = 100 + (i * coilW) / Math.min(turns, 20);
+                  return (
+                    <ellipse
+                      key={i}
+                      cx={x}
+                      cy="100"
+                      rx="15"
+                      ry={coilR}
+                      fill="none"
+                      stroke="#7c3aed"
+                      strokeWidth="2.5"
+                    />
+                  );
+                })}
+
+                {/* Length dimension */}
+                <line x1="100" y1={100 - coilR - 14} x2={100 + coilW} y2={100 - coilR - 14} stroke="#64748b" strokeWidth="1" markerEnd="url(#iArrowDim)" />
+                <line x1="100" y1={100 - coilR - 20} x2="100" y2={100 - coilR - 8} stroke="#64748b" strokeWidth="0.5" />
+                <line x1={100 + coilW} y1={100 - coilR - 20} x2={100 + coilW} y2={100 - coilR - 8} stroke="#64748b" strokeWidth="0.5" />
+                <text x={100 + coilW / 2} y={100 - coilR - 22} textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">l</text>
+
+                {/* Area dimension (coil height) */}
+                <line x1="70" y1={100 - coilR} x2="70" y2={100 + coilR} stroke="#64748b" strokeWidth="1" markerEnd="url(#iArrowDim)" />
+                <line x1="64" y1={100 - coilR} x2="76" y2={100 - coilR} stroke="#64748b" strokeWidth="0.5" />
+                <line x1="64" y1={100 + coilR} x2="76" y2={100 + coilR} stroke="#64748b" strokeWidth="0.5" />
+                <text x="52" y="103" textAnchor="middle" className="text-xs fill-slate-600" fontStyle="italic">A</text>
+              </svg>
+              <p className="text-center text-xs text-slate-500 mt-1">
+                N = {turns} turns {turns > 20 && '(showing 20)'}
+              </p>
             </div>
 
+            {/* Front view (core cross-section) */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Core Area: {(area * 10000).toFixed(2)} cm²
-              </label>
-              <input
-                type="range"
-                min="0.5"
-                max="10"
-                step="0.5"
-                value={area * 10000}
-                onChange={(e) => onAreaChange(parseFloat(e.target.value) / 10000)}
-                className="w-full"
-              />
-            </div>
+              <p className="text-[10px] text-slate-400 font-medium mb-1 uppercase tracking-wider">Cross-Section (core area <em>A</em>)</p>
+              <svg viewBox="0 0 180 140" className="w-full max-w-[200px] mx-auto">
+                {/* Coil wire ring (outer) */}
+                <circle cx="90" cy="65" r={crossR + 12} fill="none" stroke="#7c3aed" strokeWidth="10" opacity="0.2" />
+                {/* Core */}
+                <circle cx="90" cy="65" r={crossR} fill="#e9d5ff" stroke="#7c3aed" strokeWidth="1.5" />
+                <text x="90" y={69} textAnchor="middle" className="fill-purple-800 font-bold" style={{ fontSize: '11px' }}>A</text>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Coil Length: {(length * 100).toFixed(1)} cm
-              </label>
-              <input
-                type="range"
-                min="5"
-                max="50"
-                step="1"
-                value={length * 100}
-                onChange={(e) => onLengthChange(parseFloat(e.target.value) / 100)}
-                className="w-full"
-              />
-            </div>
+                {/* Radius dimension */}
+                <line x1="90" y1="65" x2={90 + crossR} y2="65" stroke="#64748b" strokeWidth="1" />
+                <line x1={90 + crossR} y1="58" x2={90 + crossR} y2="72" stroke="#64748b" strokeWidth="0.5" />
+                <text x={90 + crossR / 2} y="58" textAnchor="middle" className="fill-slate-500" style={{ fontSize: '9px' }}>r</text>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Permeability: {permeability.toExponential(2)} H/m
-              </label>
-              <input
-                type="range"
-                min="1.257"
-                max="10"
-                step="0.1"
-                value={permeability * 1e6}
-                onChange={(e) => onPermeabilityChange(parseFloat(e.target.value) * 1e-6)}
-                className="w-full"
-              />
+                <text x="90" y="130" textAnchor="middle" className="text-xs fill-slate-500">{(area * 10000).toFixed(2)} cm&sup2;</text>
+              </svg>
             </div>
           </div>
 
-          <div className="mt-6 bg-purple-50 p-4 rounded-lg border border-purple-100">
+          {/* 3. Sliders */}
+          <div className="space-y-4 mb-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Number of Turns: <span className="text-purple-600 font-semibold">{turns}</span>
+              </label>
+              <input type="range" min="10" max="500" step="10" value={turns} onChange={(e) => onTurnsChange(parseFloat(e.target.value))} className="w-full accent-purple-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Core Area: <span className="text-purple-600 font-semibold">{(area * 10000).toFixed(2)} cm&sup2;</span>
+              </label>
+              <input type="range" min="0.5" max="10" step="0.5" value={area * 10000} onChange={(e) => onAreaChange(parseFloat(e.target.value) / 10000)} className="w-full accent-purple-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Coil Length: <span className="text-purple-600 font-semibold">{(length * 100).toFixed(1)} cm</span>
+              </label>
+              <input type="range" min="5" max="50" step="1" value={length * 100} onChange={(e) => onLengthChange(parseFloat(e.target.value) / 100)} className="w-full accent-purple-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Permeability: <span className="text-purple-600 font-semibold">{permeability.toExponential(2)} H/m</span>
+              </label>
+              <input type="range" min="1.257" max="10" step="0.1" value={permeability * 1e6} onChange={(e) => onPermeabilityChange(parseFloat(e.target.value) * 1e-6)} className="w-full accent-purple-500" />
+            </div>
+          </div>
+
+          {/* 4. Result */}
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
             <p className="text-sm font-semibold text-purple-900 mb-1">Calculated Inductance:</p>
-            <p className="text-3xl font-bold text-purple-700">
-              {(inductance * 1000).toFixed(2)} mH
-            </p>
+            <p className="text-3xl font-bold text-purple-700">{(inductance * 1000).toFixed(2)} mH</p>
           </div>
         </section>
       </div>
