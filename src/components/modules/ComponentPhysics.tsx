@@ -41,18 +41,22 @@ export function ComponentPhysics() {
         </p>
       </div>
 
-      <div className="flex gap-4 border-b border-slate-200">
-        {(['resistor', 'capacitor', 'inductor'] as const).map((component) => (
+      <div className="flex border-b-2 border-slate-200">
+        {([
+          { id: 'resistor' as const, label: 'Resistor', color: 'border-red-500 text-red-700 bg-red-50' },
+          { id: 'capacitor' as const, label: 'Capacitor', color: 'border-green-500 text-green-700 bg-green-50' },
+          { id: 'inductor' as const, label: 'Inductor', color: 'border-purple-500 text-purple-700 bg-purple-50' },
+        ]).map((component) => (
           <button
-            key={component}
-            onClick={() => setActiveComponent(component)}
-            className={`px-6 py-3 font-medium capitalize transition-colors border-b-2 ${
-              activeComponent === component
-                ? 'border-engineering-blue-600 text-engineering-blue-700'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
+            key={component.id}
+            onClick={() => setActiveComponent(component.id)}
+            className={`px-6 py-3 font-semibold text-sm transition-colors border-b-3 -mb-[2px] ${
+              activeComponent === component.id
+                ? component.color
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
             }`}
           >
-            {component}
+            {component.label}
           </button>
         ))}
       </div>
@@ -290,10 +294,10 @@ function ResistorSection({
             </div>
           </div>
 
-          <div className="mt-6 bg-engineering-blue-50 p-4 rounded-lg">
-            <p className="text-sm font-semibold text-engineering-blue-900 mb-1">Calculated Resistance:</p>
-            <p className="text-3xl font-bold text-engineering-blue-700">
-              {resistance.toFixed(3)} Ω
+          <div className="mt-6 bg-red-50 p-4 rounded-lg border border-red-100">
+            <p className="text-sm font-semibold text-red-900 mb-1">Calculated Resistance:</p>
+            <p className="text-3xl font-bold text-red-700">
+              {resistance.toFixed(3)} &#937;
             </p>
           </div>
         </section>
@@ -525,9 +529,9 @@ function CapacitorSection({
             </div>
           </div>
 
-          <div className="mt-6 bg-engineering-blue-50 p-4 rounded-lg">
-            <p className="text-sm font-semibold text-engineering-blue-900 mb-1">Calculated Capacitance:</p>
-            <p className="text-3xl font-bold text-engineering-blue-700">
+          <div className="mt-6 bg-green-50 p-4 rounded-lg border border-green-100">
+            <p className="text-sm font-semibold text-green-900 mb-1">Calculated Capacitance:</p>
+            <p className="text-3xl font-bold text-green-700">
               {(capacitance * 1e12).toFixed(2)} pF
             </p>
           </div>
@@ -759,9 +763,9 @@ function InductorSection({
             </div>
           </div>
 
-          <div className="mt-6 bg-engineering-blue-50 p-4 rounded-lg">
-            <p className="text-sm font-semibold text-engineering-blue-900 mb-1">Calculated Inductance:</p>
-            <p className="text-3xl font-bold text-engineering-blue-700">
+          <div className="mt-6 bg-purple-50 p-4 rounded-lg border border-purple-100">
+            <p className="text-sm font-semibold text-purple-900 mb-1">Calculated Inductance:</p>
+            <p className="text-3xl font-bold text-purple-700">
               {(inductance * 1000).toFixed(2)} mH
             </p>
           </div>

@@ -104,7 +104,7 @@ export function SDomainAnalysis() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Resistance (R): {R} Ω
+                Resistance (R): <span className="text-red-600 font-semibold">{R} &#937;</span>
               </label>
               <input
                 type="range"
@@ -113,13 +113,13 @@ export function SDomainAnalysis() {
                 step="10"
                 value={R}
                 onChange={(e) => setR(parseFloat(e.target.value))}
-                className="w-full"
+                className="w-full accent-red-500"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Inductance (L): {(L * 1000).toFixed(1)} mH
+                Inductance (L): <span className="text-purple-600 font-semibold">{(L * 1000).toFixed(1)} mH</span>
               </label>
               <input
                 type="range"
@@ -128,13 +128,13 @@ export function SDomainAnalysis() {
                 step="10"
                 value={L * 1000}
                 onChange={(e) => setL(parseFloat(e.target.value) / 1000)}
-                className="w-full"
+                className="w-full accent-purple-500"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Capacitance (C): {(C * 1e6).toFixed(1)} µF
+                Capacitance (C): <span className="text-green-600 font-semibold">{(C * 1e6).toFixed(1)} &#181;F</span>
               </label>
               <input
                 type="range"
@@ -143,7 +143,7 @@ export function SDomainAnalysis() {
                 step="10"
                 value={C * 1e6}
                 onChange={(e) => setC(parseFloat(e.target.value) / 1e6)}
-                className="w-full"
+                className="w-full accent-green-500"
               />
             </div>
 

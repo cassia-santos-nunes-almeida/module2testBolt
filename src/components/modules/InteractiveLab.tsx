@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { RotateCcw } from 'lucide-react';
-import { calculateCircuitResponse, type CircuitType } from '../../utils/circuitSolver';
+import { calculateCircuitResponse, type CircuitType, type InputType } from '../../utils/circuitSolver';
 import { MathWrapper } from '../common/MathWrapper';
 
 function CircuitDiagram({ type, R, L, C, voltage }: { type: CircuitType; R: number; L: number; C: number; voltage: number }) {
@@ -104,6 +104,7 @@ function CircuitDiagram({ type, R, L, C, voltage }: { type: CircuitType; R: numb
 
 export function InteractiveLab() {
   const [circuitType, setCircuitType] = useState<CircuitType>('RLC');
+  const [inputType, setInputType] = useState<InputType>('step');
   const [R, setR] = useState(100);
   const [L, setL] = useState(0.1);
   const [C, setC] = useState(0.0001);
@@ -117,9 +118,10 @@ export function InteractiveLab() {
       circuitType,
       { R, L, C, voltage },
       duration / 1000,
-      duration
+      duration,
+      inputType
     );
-  }, [circuitType, R, L, C, voltage, duration]);
+  }, [circuitType, R, L, C, voltage, duration, inputType]);
 
   const chartData = useMemo(() => {
     return response.data.map((point) => ({
@@ -146,21 +148,40 @@ export function InteractiveLab() {
         </p>
       </div>
 
-      {/* Circuit type tabs */}
-      <div className="flex border-b-2 border-slate-200">
-        {(['RC', 'RL', 'RLC'] as const).map((type) => (
-          <button
-            key={type}
-            onClick={() => setCircuitType(type)}
-            className={`px-6 py-3 font-semibold text-sm transition-colors border-b-3 -mb-[2px] ${
-              circuitType === type
-                ? 'border-engineering-blue-600 text-engineering-blue-700 bg-engineering-blue-50'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            {type} Circuit
-          </button>
-        ))}
+      {/* Circuit type tabs + input type toggle */}
+      <div className="flex items-center justify-between border-b-2 border-slate-200">
+        <div className="flex">
+          {(['RC', 'RL', 'RLC'] as const).map((type) => (
+            <button
+              key={type}
+              onClick={() => setCircuitType(type)}
+              className={`px-6 py-3 font-semibold text-sm transition-colors border-b-3 -mb-[2px] ${
+                circuitType === type
+                  ? 'border-engineering-blue-600 text-engineering-blue-700 bg-engineering-blue-50'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              {type} Circuit
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-1 mr-2">
+          <span className="text-xs text-slate-500 mr-2 font-medium">Input:</span>
+          {(['step', 'impulse'] as const).map((type) => (
+            <button
+              key={type}
+              onClick={() => setInputType(type)}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors capitalize ${
+                inputType === type
+                  ? 'bg-engineering-blue-600 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              }`}
+            >
+              {type === 'step' ? 'Step u(t)' : 'Impulse \u03B4(t)'}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Main dashboard: config + diagram + analysis side by side */}
@@ -324,7 +345,14 @@ export function InteractiveLab() {
       {/* Chart */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-slate-900">Response Visualization</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-xl font-semibold text-slate-900">Response Visualization</h3>
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+              inputType === 'step' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+            }`}>
+              {inputType === 'step' ? 'Step Input u(t)' : 'Impulse Input \u03B4(t)'}
+            </span>
+          </div>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={showVoltage} onChange={(e) => setShowVoltage(e.target.checked)} className="w-4 h-4 accent-blue-500" />
@@ -372,9 +400,18 @@ export function InteractiveLab() {
 
       {/* Equations */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-semibold text-slate-900 mb-4">Circuit Equations</h3>
+        <div className="flex items-center gap-3 mb-4">
+          <h3 className="text-xl font-semibold text-slate-900">Circuit Equations</h3>
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+            inputType === 'step'
+              ? 'bg-blue-100 text-blue-700'
+              : 'bg-amber-100 text-amber-700'
+          }`}>
+            {inputType === 'step' ? 'Step Response' : 'Impulse Response'}
+          </span>
+        </div>
 
-        {circuitType === 'RC' && (
+        {circuitType === 'RC' && inputType === 'step' && (
           <div className="space-y-3">
             <div className="bg-slate-50 p-4 rounded-lg">
               <p className="text-sm font-semibold text-slate-700 mb-2">Time Constant:</p>
@@ -391,7 +428,23 @@ export function InteractiveLab() {
           </div>
         )}
 
-        {circuitType === 'RL' && (
+        {circuitType === 'RC' && inputType === 'impulse' && (
+          <div className="space-y-3">
+            <div className="bg-amber-50 p-4 rounded-lg border-l-3 border-amber-400">
+              <p className="text-xs text-amber-700 mb-2">Impulse response h(t) = derivative of step response</p>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <p className="text-sm font-semibold text-slate-700 mb-2">Voltage (Impulse Response):</p>
+              <MathWrapper formula="v_C(t) = \frac{1}{RC}e^{-t/\tau}" block />
+            </div>
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <p className="text-sm font-semibold text-slate-700 mb-2">S-Domain:</p>
+              <MathWrapper formula="H(s) = \frac{1/RC}{s + 1/RC}" block />
+            </div>
+          </div>
+        )}
+
+        {circuitType === 'RL' && inputType === 'step' && (
           <div className="space-y-3">
             <div className="bg-slate-50 p-4 rounded-lg">
               <p className="text-sm font-semibold text-slate-700 mb-2">Time Constant:</p>
@@ -404,6 +457,22 @@ export function InteractiveLab() {
             <div className="bg-slate-50 p-4 rounded-lg">
               <p className="text-sm font-semibold text-slate-700 mb-2">Voltage Response:</p>
               <MathWrapper formula="v_L(t) = V_s e^{-t/\tau}" block />
+            </div>
+          </div>
+        )}
+
+        {circuitType === 'RL' && inputType === 'impulse' && (
+          <div className="space-y-3">
+            <div className="bg-amber-50 p-4 rounded-lg border-l-3 border-amber-400">
+              <p className="text-xs text-amber-700 mb-2">Impulse response h(t) = derivative of step response</p>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <p className="text-sm font-semibold text-slate-700 mb-2">Current (Impulse Response):</p>
+              <MathWrapper formula="i(t) = \frac{1}{L}e^{-Rt/L}" block />
+            </div>
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <p className="text-sm font-semibold text-slate-700 mb-2">S-Domain:</p>
+              <MathWrapper formula="H(s) = \frac{R/L}{s + R/L}" block />
             </div>
           </div>
         )}
@@ -428,10 +497,24 @@ export function InteractiveLab() {
               </div>
             </div>
 
+            {inputType === 'impulse' && (
+              <div className="bg-amber-50 p-4 rounded-lg border-l-3 border-amber-400">
+                <p className="text-xs text-amber-700 mb-2">
+                  Impulse response: <MathWrapper formula="h(t) = \mathcal{L}^{-1}\{H(s)\}" /> — the most fundamental characterization of the system
+                </p>
+              </div>
+            )}
+
             {response.dampingType === 'underdamped' && (
               <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
-                <p className="text-sm font-semibold text-slate-700 mb-2">Underdamped Response:</p>
-                <MathWrapper formula="v_C(t) = V_s\left(1 - e^{-\alpha t}\left(\cos(\omega_d t) + \frac{\alpha}{\omega_d}\sin(\omega_d t)\right)\right)" block />
+                <p className="text-sm font-semibold text-slate-700 mb-2">
+                  Underdamped {inputType === 'impulse' ? 'Impulse' : 'Step'} Response:
+                </p>
+                {inputType === 'step' ? (
+                  <MathWrapper formula="v_C(t) = V_s\left(1 - e^{-\alpha t}\left(\cos(\omega_d t) + \frac{\alpha}{\omega_d}\sin(\omega_d t)\right)\right)" block />
+                ) : (
+                  <MathWrapper formula="h(t) = \frac{\omega_0^2}{\omega_d}\,e^{-\alpha t}\sin(\omega_d t)" block />
+                )}
                 <p className="text-sm text-slate-600 mt-2">
                   where <MathWrapper formula="\omega_d = \omega_0\sqrt{1-\zeta^2}" /> = {(response.omega0 * Math.sqrt(1 - response.zeta * response.zeta)).toFixed(2)} rad/s
                 </p>
@@ -440,16 +523,30 @@ export function InteractiveLab() {
 
             {response.dampingType === 'critically-damped' && (
               <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
-                <p className="text-sm font-semibold text-slate-700 mb-2">Critically Damped Response:</p>
-                <MathWrapper formula="v_C(t) = V_s(1 - e^{-\alpha t}(1 + \alpha t))" block />
+                <p className="text-sm font-semibold text-slate-700 mb-2">
+                  Critically Damped {inputType === 'impulse' ? 'Impulse' : 'Step'} Response:
+                </p>
+                {inputType === 'step' ? (
+                  <MathWrapper formula="v_C(t) = V_s(1 - e^{-\alpha t}(1 + \alpha t))" block />
+                ) : (
+                  <MathWrapper formula="h(t) = \omega_0^2\,t\,e^{-\alpha t}" block />
+                )}
               </div>
             )}
 
             {response.dampingType === 'overdamped' && (
               <div className="bg-amber-50 p-4 rounded-lg border-l-4 border-amber-500">
-                <p className="text-sm font-semibold text-slate-700 mb-2">Overdamped Response:</p>
-                <MathWrapper formula="v_C(t) = V_s(A_1 e^{s_1 t} + A_2 e^{s_2 t})" block />
-                <p className="text-sm text-slate-600 mt-2">where s&#8321;, s&#8322; are the two distinct real roots</p>
+                <p className="text-sm font-semibold text-slate-700 mb-2">
+                  Overdamped {inputType === 'impulse' ? 'Impulse' : 'Step'} Response:
+                </p>
+                {inputType === 'step' ? (
+                  <>
+                    <MathWrapper formula="v_C(t) = V_s(A_1 e^{s_1 t} + A_2 e^{s_2 t})" block />
+                    <p className="text-sm text-slate-600 mt-2">where s&#8321;, s&#8322; are the two distinct real roots</p>
+                  </>
+                ) : (
+                  <MathWrapper formula="h(t) = \frac{\omega_0^2}{s_1 - s_2}(e^{s_1 t} - e^{s_2 t})" block />
+                )}
               </div>
             )}
           </div>

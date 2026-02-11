@@ -99,7 +99,7 @@ function RCCircuitComparison() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-slate-50 to-white rounded-lg shadow-md p-6 border-l-4 border-slate-500">
+      <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
         <h3 className="text-2xl font-semibold text-slate-900 mb-4">
           S-Domain Approach
         </h3>
@@ -226,7 +226,7 @@ function RLCircuitComparison() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-slate-50 to-white rounded-lg shadow-md p-6 border-l-4 border-slate-500">
+      <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
         <h3 className="text-2xl font-semibold text-slate-900 mb-4">
           S-Domain Approach
         </h3>
@@ -307,7 +307,7 @@ function MethodComparisonTable() {
             <tr>
               <th className="border border-slate-300 bg-slate-100 px-4 py-3 text-left font-semibold text-slate-800 w-1/4">Aspect</th>
               <th className="border border-slate-300 bg-blue-50 px-4 py-3 text-left font-semibold text-blue-800 w-[37.5%]">Time-Domain</th>
-              <th className="border border-slate-300 bg-slate-50 px-4 py-3 text-left font-semibold text-slate-800 w-[37.5%]">S-Domain (Laplace)</th>
+              <th className="border border-slate-300 bg-purple-50 px-4 py-3 text-left font-semibold text-purple-800 w-[37.5%]">S-Domain (Laplace)</th>
             </tr>
           </thead>
           <tbody>
@@ -560,7 +560,7 @@ function RLCCircuitComparison() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-slate-50 to-white rounded-lg shadow-md p-6 border-l-4 border-slate-500">
+      <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
         <h3 className="text-2xl font-semibold text-slate-900 mb-4">
           S-Domain Approach
         </h3>

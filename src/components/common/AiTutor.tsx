@@ -32,7 +32,9 @@ Guidelines:
 export function AiTutor({ isOpen, onToggle }: AiTutorProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState(() => {
+    try { return localStorage.getItem('emac_gemini_api_key') || ''; } catch { return ''; }
+  });
   const [isApiKeySet, setIsApiKeySet] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -46,22 +48,42 @@ export function AiTutor({ isOpen, onToggle }: AiTutorProps) {
     scrollToBottom();
   }, [messages]);
 
+  // Auto-initialize if we have a saved API key
+  useEffect(() => {
+    if (apiKey.trim() && !isApiKeySet) {
+      initializeChat(apiKey);
+    }
+  }, []);
+
+  const initializeChat = (key: string) => {
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      systemInstruction: SYSTEM_INSTRUCTION,
+    });
+    chatRef.current = model.startChat();
+    setIsApiKeySet(true);
+    try { localStorage.setItem('emac_gemini_api_key', key); } catch {}
+    setMessages([
+      {
+        role: 'assistant',
+        content: 'Hello! I\'m your Circuit Analysis tutor. I can help you understand concepts related to resistors, capacitors, inductors, time-domain analysis, Laplace transforms, and s-domain analysis. Ask me anything!'
+      }
+    ]);
+  };
+
   const handleSetApiKey = () => {
     if (apiKey.trim()) {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-2.0-flash',
-        systemInstruction: SYSTEM_INSTRUCTION,
-      });
-      chatRef.current = model.startChat();
-      setIsApiKeySet(true);
-      setMessages([
-        {
-          role: 'assistant',
-          content: 'Hello! I\'m your Circuit Analysis tutor. I can help you understand concepts related to resistors, capacitors, inductors, time-domain analysis, Laplace transforms, and s-domain analysis. Ask me anything!'
-        }
-      ]);
+      initializeChat(apiKey);
     }
+  };
+
+  const handleClearApiKey = () => {
+    try { localStorage.removeItem('emac_gemini_api_key'); } catch {}
+    setApiKey('');
+    setIsApiKeySet(false);
+    setMessages([]);
+    chatRef.current = null;
   };
 
   const parseLatex = (text: string) => {
@@ -121,18 +143,30 @@ export function AiTutor({ isOpen, onToggle }: AiTutorProps) {
 
   return (
     <aside className="w-96 h-screen bg-white border-l border-slate-200 flex flex-col shrink-0">
-      <div className="bg-engineering-blue-600 text-white p-4 flex justify-between items-center">
+      <div className="bg-gradient-to-r from-engineering-blue-600 to-engineering-blue-700 text-white p-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5" />
           <h3 className="font-semibold">AI Circuit Tutor</h3>
         </div>
-        <button
-          onClick={onToggle}
-          className="hover:bg-engineering-blue-700 p-1 rounded"
-          aria-label="Close tutor panel"
-        >
-          <PanelRightOpen className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          {isApiKeySet && (
+            <button
+              onClick={handleClearApiKey}
+              className="hover:bg-engineering-blue-800 p-1 rounded text-engineering-blue-200 hover:text-white transition-colors"
+              aria-label="Change API key"
+              title="Change API key"
+            >
+              <Key className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            onClick={onToggle}
+            className="hover:bg-engineering-blue-800 p-1 rounded transition-colors"
+            aria-label="Close tutor panel"
+          >
+            <PanelRightOpen className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {!isApiKeySet ? (
