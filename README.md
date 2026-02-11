@@ -32,8 +32,9 @@ This repo includes a GitHub Actions workflow that auto-deploys on every push to 
 **One-time setup:**
 1. Go to your repo on GitHub
 2. Navigate to **Settings > Pages**
-3. Under **Source**, select **GitHub Actions**
-4. Push to `main` -- the site will be live within a couple of minutes
+3. Under **Build and deployment > Source**, select **Deploy from a branch**
+4. Under **Branch**, select **gh-pages** / **/ (root)** and click **Save**
+5. Push to `main` -- the workflow builds the app and pushes it to the `gh-pages` branch automatically
 
 ## For Developers
 
