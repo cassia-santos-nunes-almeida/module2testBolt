@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { RotateCcw } from 'lucide-react';
 import { calculateCircuitResponse, type CircuitType, type InputType } from '../../utils/circuitSolver';
 import { MathWrapper } from '../common/MathWrapper';
+import { ResponseChartTooltip, RCritMarker, DurationControl } from '../common/CircuitCharts';
 
 function CircuitDiagram({ type, R, L, C, voltage }: { type: CircuitType; R: number; L: number; C: number; voltage: number }) {
   return (
@@ -247,17 +248,8 @@ export function InteractiveLab() {
               </label>
               <div className="relative">
                 <input type="range" min="1" max="10000" step="1" value={R} onChange={(e) => setR(parseFloat(e.target.value))} className="w-full accent-red-500" />
-                {/* R_crit marker for RLC */}
                 {rCritPercent !== null && (
-                  <div
-                    className="absolute top-full mt-0.5 -translate-x-1/2 pointer-events-none"
-                    style={{ left: `${rCritPercent}%` }}
-                  >
-                    <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-green-500 mx-auto" />
-                    <span className="text-[10px] font-semibold text-green-700 whitespace-nowrap">
-                      R<sub>crit</sub>={rCrit! >= 1000 ? `${(rCrit!/1000).toFixed(1)}k` : rCrit!.toFixed(0)}&Omega;
-                    </span>
-                  </div>
+                  <RCritMarker rCrit={rCrit!} rCritPercent={rCritPercent} />
                 )}
               </div>
               <div className={`flex justify-between text-xs text-slate-400 ${rCritPercent !== null ? 'mt-5' : 'mt-0.5'}`}>
@@ -293,30 +285,13 @@ export function InteractiveLab() {
               <div className="flex justify-between text-xs text-slate-400 mt-0.5"><span>1 V</span><span>50 V</span></div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-slate-700">
-                  Duration: <span className="text-engineering-blue-700 font-semibold">{(effectiveDuration * 1000).toFixed(1)} ms</span>
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={autoDuration}
-                    onChange={(e) => setAutoDuration(e.target.checked)}
-                    className="w-3.5 h-3.5 accent-engineering-blue-600"
-                  />
-                  <span className="text-xs font-medium text-slate-500">Auto (5&#964;)</span>
-                </label>
-              </div>
-              <input
-                type="range" min="1" max="100" step="1"
-                value={autoDuration ? effectiveDuration * 1000 : duration * 1000}
-                onChange={(e) => { setAutoDuration(false); setDuration(parseFloat(e.target.value) / 1000); }}
-                className={`w-full ${autoDuration ? 'opacity-40' : ''}`}
-                disabled={autoDuration}
-              />
-              <div className="flex justify-between text-xs text-slate-400 mt-0.5"><span>1 ms</span><span>100 ms</span></div>
-            </div>
+            <DurationControl
+              effectiveDuration={effectiveDuration}
+              autoDuration={autoDuration}
+              duration={duration}
+              onAutoDurationChange={setAutoDuration}
+              onDurationChange={setDuration}
+            />
           </div>
         </div>
 
@@ -519,23 +494,7 @@ export function InteractiveLab() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="time" label={{ value: 'Time (ms)', position: 'insideBottom', offset: -5 }} />
               <YAxis label={{ value: 'Voltage (V) / Current (mA)', angle: -90, position: 'insideLeft' }} />
-              <Tooltip
-                content={({ payload, label }) => {
-                  if (payload && payload.length > 0) {
-                    return (
-                      <div className="bg-white p-3 border border-slate-300 rounded shadow-lg">
-                        <p className="font-semibold text-slate-800">Time: {typeof label === 'string' ? parseFloat(label).toFixed(3) : Number(label).toFixed(3)} ms</p>
-                        {payload.map((entry, index) => (
-                          <p key={index} style={{ color: entry.color }} className="text-sm">
-                            {entry.name}: {parseFloat(entry.value as string).toFixed(3)} {entry.name === 'Voltage' ? 'V' : 'mA'}
-                          </p>
-                        ))}
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
+              <Tooltip content={({ payload, label }) => <ResponseChartTooltip payload={payload as Array<{ color?: string; name?: string; value?: string | number }>} label={label} />} />
               <Legend />
               {/* Time constant marker */}
               {timeConstantMs <= effectiveDuration * 1000 && (

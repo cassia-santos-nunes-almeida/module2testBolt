@@ -1,15 +1,7 @@
-import { useState } from 'react';
 import { MathWrapper } from '../common/MathWrapper';
+import { Tabs } from '../common/Tabs';
 import { laplaceTransforms, laplaceProperties } from '../../utils/componentMath';
 import { BookOpen, Zap as ZapIcon, ArrowRightLeft, Table2 } from 'lucide-react';
-
-type TabId = 'theory' | 'tables' | 'examples';
-
-const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
-  { id: 'theory', label: 'Theory & Why Use', icon: <BookOpen className="w-4 h-4" /> },
-  { id: 'tables', label: 'Tables & Properties', icon: <Table2 className="w-4 h-4" /> },
-  { id: 'examples', label: 'Worked Examples', icon: <ArrowRightLeft className="w-4 h-4" /> },
-];
 
 function TheoryTab() {
   return (
@@ -325,10 +317,8 @@ function ExamplesTab() {
 }
 
 export function LaplaceTheory() {
-  const [activeTab, setActiveTab] = useState<TabId>('theory');
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h1 className="text-4xl font-bold text-slate-900 mb-2">Laplace Transform Theory</h1>
         <p className="text-lg text-slate-600">
@@ -336,28 +326,25 @@ export function LaplaceTheory() {
         </p>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex border-b-2 border-slate-200">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-6 py-3 font-semibold text-sm transition-colors border-b-3 -mb-[2px] ${
-              activeTab === tab.id
-                ? 'border-engineering-blue-600 text-engineering-blue-700 bg-engineering-blue-50'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      {activeTab === 'theory' && <TheoryTab />}
-      {activeTab === 'tables' && <TablesTab />}
-      {activeTab === 'examples' && <ExamplesTab />}
+      <Tabs
+        tabs={[
+          {
+            label: 'Theory & Why Use',
+            icon: <BookOpen className="w-4 h-4" />,
+            content: <TheoryTab />,
+          },
+          {
+            label: 'Tables & Properties',
+            icon: <Table2 className="w-4 h-4" />,
+            content: <TablesTab />,
+          },
+          {
+            label: 'Worked Examples',
+            icon: <ArrowRightLeft className="w-4 h-4" />,
+            content: <ExamplesTab />,
+          },
+        ]}
+      />
     </div>
   );
 }

@@ -118,19 +118,24 @@ function calculateRLCResponse(
   let dampingType: DampingType;
   const data: TimeSeriesPoint[] = [];
 
+  const CRITICAL_DAMPING_TOLERANCE = 0.01;
+
   if (zeta > 1) {
     dampingType = 'overdamped';
-    const s1 = -alpha + Math.sqrt(alpha * alpha - omega0 * omega0);
-    const s2 = -alpha - Math.sqrt(alpha * alpha - omega0 * omega0);
+    const sqrtTerm = Math.sqrt(alpha * alpha - omega0 * omega0);
+    const s1 = -alpha + sqrtTerm;
+    const s2 = -alpha - sqrtTerm;
+    const A1 = (Vs * s2) / (s2 - s1);
+    const A2 = (-Vs * s1) / (s2 - s1);
 
     for (let t = 0; t <= duration; t += timeStep) {
-      const A1 = (Vs * s2) / (s2 - s1);
-      const A2 = (-Vs * s1) / (s2 - s1);
-      const v = A1 * Math.exp(s1 * t) + A2 * Math.exp(s2 * t);
-      const i = C * (A1 * s1 * Math.exp(s1 * t) + A2 * s2 * Math.exp(s2 * t));
+      const exp1 = Math.exp(s1 * t);
+      const exp2 = Math.exp(s2 * t);
+      const v = A1 * exp1 + A2 * exp2;
+      const i = C * (A1 * s1 * exp1 + A2 * s2 * exp2);
       data.push({ time: t, voltage: v, current: i });
     }
-  } else if (Math.abs(zeta - 1) < 0.01) {
+  } else if (Math.abs(zeta - 1) < CRITICAL_DAMPING_TOLERANCE) {
     dampingType = 'critically-damped';
 
     for (let t = 0; t <= duration; t += timeStep) {
@@ -196,17 +201,23 @@ function calculateRLCImpulseResponse(
   let dampingType: DampingType;
   const data: TimeSeriesPoint[] = [];
 
+  const CRITICAL_DAMPING_TOLERANCE = 0.01;
+
   if (zeta > 1) {
     dampingType = 'overdamped';
-    const s1 = -alpha + Math.sqrt(alpha * alpha - omega0 * omega0);
-    const s2 = -alpha - Math.sqrt(alpha * alpha - omega0 * omega0);
+    const sqrtTerm = Math.sqrt(alpha * alpha - omega0 * omega0);
+    const s1 = -alpha + sqrtTerm;
+    const s2 = -alpha - sqrtTerm;
     const scale = Vs * omega0 * omega0;
+    const invDiff = 1 / (s1 - s2);
     for (let t = 0; t <= duration; t += timeStep) {
-      const v = scale * (Math.exp(s1 * t) - Math.exp(s2 * t)) / (s1 - s2);
-      const i = C * scale * (s1 * Math.exp(s1 * t) - s2 * Math.exp(s2 * t)) / (s1 - s2);
+      const exp1 = Math.exp(s1 * t);
+      const exp2 = Math.exp(s2 * t);
+      const v = scale * (exp1 - exp2) * invDiff;
+      const i = C * scale * (s1 * exp1 - s2 * exp2) * invDiff;
       data.push({ time: t, voltage: v, current: i });
     }
-  } else if (Math.abs(zeta - 1) < 0.01) {
+  } else if (Math.abs(zeta - 1) < CRITICAL_DAMPING_TOLERANCE) {
     dampingType = 'critically-damped';
     const scale = Vs * omega0 * omega0;
     for (let t = 0; t <= duration; t += timeStep) {
