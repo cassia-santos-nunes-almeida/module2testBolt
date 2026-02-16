@@ -31,6 +31,30 @@ Guidelines:
 5. If asked about unrelated topics, politely redirect to circuit theory.
 6. Use proper engineering terminology and reference Nilsson & Riedel principles when appropriate.`;
 
+/** Parse $...$ and $$...$$ LaTeX delimiters into text/latex segments. */
+function parseLatex(text: string) {
+  const parts: Array<{ type: 'text' | 'latex'; content: string }> = [];
+  const regex = /\$\$(.*?)\$\$|\$(.*?)\$/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+    }
+
+    const latex = match[1] || match[2];
+    parts.push({ type: 'latex', content: latex });
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  }
+
+  return parts;
+}
+
 export function AiTutor({ mode, onModeChange }: AiTutorProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -55,11 +79,13 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
     scrollToBottom();
   }, [messages]);
 
-  // Auto-initialize if we have a saved API key
+  // Auto-initialize if we have a saved API key on mount
   useEffect(() => {
-    if (apiKey.trim() && !isApiKeySet) {
-      initializeChat(apiKey);
+    const savedKey = (() => { try { return localStorage.getItem('emac_gemini_api_key') || ''; } catch { return ''; } })();
+    if (savedKey.trim()) {
+      initializeChat(savedKey);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Set default floating position on first float
@@ -70,7 +96,7 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
         y: Math.max(window.innerHeight - 560, 20),
       });
     }
-  }, [mode]);
+  }, [mode, floatPos.x]);
 
   const initializeChat = (key: string) => {
     const genAI = new GoogleGenerativeAI(key);
@@ -101,29 +127,6 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
     setIsApiKeySet(false);
     setMessages([]);
     chatRef.current = null;
-  };
-
-  const parseLatex = (text: string) => {
-    const parts: Array<{ type: 'text' | 'latex'; content: string }> = [];
-    const regex = /\$\$(.*?)\$\$|\$(.*?)\$/g;
-    let lastIndex = 0;
-    let match;
-
-    while ((match = regex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
-      }
-
-      const latex = match[1] || match[2];
-      parts.push({ type: 'latex', content: latex, });
-      lastIndex = regex.lastIndex;
-    }
-
-    if (lastIndex < text.length) {
-      parts.push({ type: 'text', content: text.slice(lastIndex) });
-    }
-
-    return parts;
   };
 
   const handleSendMessage = async () => {
