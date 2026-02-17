@@ -26,6 +26,10 @@ To enable it:
 
 Your key is stored only in your browser's local storage — it is never sent to any server other than Google's API.
 
+## Progressive Web App
+
+The app is installable as a PWA with offline support. On supported browsers, users can add it to their home screen for a native-like experience. The service worker auto-updates when new content is deployed — no manual refresh needed.
+
 ## Getting Started
 
 ```bash
@@ -33,7 +37,7 @@ Your key is stored only in your browser's local storage — it is never sent to 
 npm install
 
 # Start dev server (localhost:5173)
-npm run dev
+npm run dev        # or: npm start
 
 # Production build (TypeScript check + Vite bundle)
 npm run build
@@ -55,10 +59,11 @@ npm run preview
 - **Lucide React** — Icons
 - **React Router DOM 7** — Client-side routing
 - **Google Generative AI** — Optional AI tutor (Gemini)
+- **vite-plugin-pwa** — Service worker generation and offline caching
 
 ## Deployment
 
-This repo includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that auto-deploys to GitHub Pages on every push to `main`.
+This repo includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that auto-deploys to GitHub Pages on every push to `main`. The pipeline runs lint, type-check, and build before deploying. A `404.html` fallback is generated so that client-side routes work on direct navigation.
 
 **Setup:**
 1. Go to **Settings > Pages** in your GitHub repo

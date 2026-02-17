@@ -1,5 +1,10 @@
 name: Deploy to GitHub Pages
 
+# This is the ONLY deploy workflow for this project.
+# Requires GitHub Pages source set to "GitHub Actions" in repo Settings > Pages.
+# If a second "pages-build-deployment" workflow appears in the Actions tab,
+# change Pages source from "Deploy from a branch" to "GitHub Actions".
+
 on:
   push:
     branches: [main]
@@ -21,19 +26,32 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - run: npm ci
-      - run: npm run build
+      - name: Install dependencies
+        run: npm ci
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check and build
+        run: npm run build
+
+      - name: Create SPA 404 fallback
+        run: cp ./dist/index.html ./dist/404.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
-      - id: deployment
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
