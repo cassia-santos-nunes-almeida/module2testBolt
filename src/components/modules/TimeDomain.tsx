@@ -1,9 +1,38 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { MathWrapper } from '../common/MathWrapper';
 import { circuitAnalysisFormulas } from '../../utils/componentMath';
 import { ArrowRight } from 'lucide-react';
 
 type CircuitType = 'RC' | 'RL' | 'RLC';
+
+/** Shared layout for the time-domain vs s-domain comparison sections (F16). */
+function CircuitComparisonLayout({ timeContent, sContent, conclusion }: {
+  timeContent: ReactNode;
+  sContent: ReactNode;
+  conclusion: ReactNode;
+}) {
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+        <h3 className="text-2xl font-semibold text-slate-900 mb-4">Time-Domain Approach</h3>
+        <div className="space-y-4">{timeContent}</div>
+      </div>
+
+      <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+        <h3 className="text-2xl font-semibold text-slate-900 mb-4">S-Domain Approach</h3>
+        <div className="space-y-4">{sContent}</div>
+      </div>
+
+      <div className="col-span-full bg-green-50 rounded-lg shadow-md p-6 border-l-4 border-green-500">
+        <div className="flex items-center gap-3 mb-3">
+          <ArrowRight className="w-6 h-6 text-green-600" />
+          <h3 className="text-xl font-semibold text-slate-900">Conclusion</h3>
+        </div>
+        {conclusion}
+      </div>
+    </div>
+  );
+}
 
 export function TimeDomain() {
   const [selectedCircuit, setSelectedCircuit] = useState<CircuitType>('RC');
@@ -45,13 +74,8 @@ export function TimeDomain() {
 
 function RCCircuitComparison() {
   return (
-    <div className="grid md:grid-cols-2 gap-6">
-      <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-        <h3 className="text-2xl font-semibold text-slate-900 mb-4">
-          Time-Domain Approach
-        </h3>
-
-        <div className="space-y-4">
+    <CircuitComparisonLayout
+      timeContent={<>
           <div>
             <h4 className="font-semibold text-slate-800 mb-2">Circuit Setup</h4>
             <p className="text-sm text-slate-700">
@@ -96,15 +120,8 @@ function RCCircuitComparison() {
             <h4 className="font-semibold text-slate-800 mb-3">Step 4: Find Current</h4>
             <MathWrapper formula="i(t) = C\frac{dv_C}{dt} = \frac{V_s}{R}e^{-t/\tau}" block />
           </div>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
-        <h3 className="text-2xl font-semibold text-slate-900 mb-4">
-          S-Domain Approach
-        </h3>
-
-        <div className="space-y-4">
+      </>}
+      sContent={<>
           <div>
             <h4 className="font-semibold text-slate-800 mb-2">Circuit Setup</h4>
             <p className="text-sm text-slate-700">
@@ -154,34 +171,23 @@ function RCCircuitComparison() {
             </p>
             <MathWrapper formula="v_C(t) = V_s(1 - e^{-t/RC})" block />
           </div>
-        </div>
-      </div>
-
-      <div className="col-span-full bg-green-50 rounded-lg shadow-md p-6 border-l-4 border-green-500">
-        <div className="flex items-center gap-3 mb-3">
-          <ArrowRight className="w-6 h-6 text-green-600" />
-          <h3 className="text-xl font-semibold text-slate-900">Conclusion</h3>
-        </div>
+      </>}
+      conclusion={
         <p className="text-slate-700">
           Both methods yield the <strong>identical result</strong>! The time-domain approach
           requires solving a differential equation, while the s-domain approach transforms
           it into an algebraic problem. For simple circuits, both are manageable, but for
           complex circuits, the s-domain method is significantly easier.
         </p>
-      </div>
-    </div>
+      }
+    />
   );
 }
 
 function RLCircuitComparison() {
   return (
-    <div className="grid md:grid-cols-2 gap-6">
-      <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-        <h3 className="text-2xl font-semibold text-slate-900 mb-4">
-          Time-Domain Approach
-        </h3>
-
-        <div className="space-y-4">
+    <CircuitComparisonLayout
+      timeContent={<>
           <div>
             <h4 className="font-semibold text-slate-800 mb-2">Circuit Setup</h4>
             <p className="text-sm text-slate-700">
@@ -223,15 +229,8 @@ function RLCircuitComparison() {
             <h4 className="font-semibold text-slate-800 mb-3">Step 4: Find Voltage</h4>
             <MathWrapper formula="v_L(t) = L\frac{di}{dt} = V_s e^{-Rt/L}" block />
           </div>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
-        <h3 className="text-2xl font-semibold text-slate-900 mb-4">
-          S-Domain Approach
-        </h3>
-
-        <div className="space-y-4">
+      </>}
+      sContent={<>
           <div>
             <h4 className="font-semibold text-slate-800 mb-2">Circuit Setup</h4>
             <p className="text-sm text-slate-700">
@@ -274,22 +273,16 @@ function RLCircuitComparison() {
             </p>
             <MathWrapper formula="v_L(t) = V_s e^{-Rt/L}" block />
           </div>
-        </div>
-      </div>
-
-      <div className="col-span-full bg-green-50 rounded-lg shadow-md p-6 border-l-4 border-green-500">
-        <div className="flex items-center gap-3 mb-3">
-          <ArrowRight className="w-6 h-6 text-green-600" />
-          <h3 className="text-xl font-semibold text-slate-900">Conclusion</h3>
-        </div>
+      </>}
+      conclusion={
         <p className="text-slate-700">
           Again, both approaches give the <strong>same result</strong>. The RL circuit behaves
           similarly to the RC circuit with an exponential rise in current and exponential decay
           in voltage across the inductor. The time constant <MathWrapper formula="\tau = L/R" />
           determines the response speed.
         </p>
-      </div>
-    </div>
+      }
+    />
   );
 }
 
@@ -497,13 +490,8 @@ function ResponseComparisons() {
 
 function RLCCircuitComparison() {
   return (
-    <div className="grid md:grid-cols-2 gap-6">
-      <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-        <h3 className="text-2xl font-semibold text-slate-900 mb-4">
-          Time-Domain Approach
-        </h3>
-
-        <div className="space-y-4">
+    <CircuitComparisonLayout
+      timeContent={<>
           <div>
             <h4 className="font-semibold text-slate-800 mb-2">Circuit Setup</h4>
             <p className="text-sm text-slate-700">
@@ -557,15 +545,8 @@ function RLCCircuitComparison() {
               where <MathWrapper formula="\omega_d = \omega_0\sqrt{1-\zeta^2}" />
             </p>
           </div>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
-        <h3 className="text-2xl font-semibold text-slate-900 mb-4">
-          S-Domain Approach
-        </h3>
-
-        <div className="space-y-4">
+      </>}
+      sContent={<>
           <div>
             <h4 className="font-semibold text-slate-800 mb-2">Circuit Setup</h4>
             <p className="text-sm text-slate-700">
@@ -633,14 +614,8 @@ function RLCCircuitComparison() {
               The inverse Laplace transform yields the same time-domain solutions!
             </p>
           </div>
-        </div>
-      </div>
-
-      <div className="col-span-full bg-green-50 rounded-lg shadow-md p-6 border-l-4 border-green-500">
-        <div className="flex items-center gap-3 mb-3">
-          <ArrowRight className="w-6 h-6 text-green-600" />
-          <h3 className="text-xl font-semibold text-slate-900">Conclusion</h3>
-        </div>
+      </>}
+      conclusion={<>
         <p className="text-slate-700 mb-3">
           For the RLC circuit, the s-domain advantage becomes clear! Instead of solving a
           second-order differential equation with multiple cases, we:
@@ -654,7 +629,7 @@ function RLCCircuitComparison() {
           The damping behavior (<MathWrapper formula="\zeta" />) directly relates to pole
           positions in the s-plane, providing deep physical insight!
         </p>
-      </div>
-    </div>
+      </>}
+    />
   );
 }
