@@ -20,19 +20,18 @@ const FLOAT_HEIGHT = 520;
 const FLOAT_PADDING = 20;
 
 /** Custom hook for window drag behavior (F4/F5). */
+function getDefaultFloatPos() {
+  if (typeof window === 'undefined') return { x: FLOAT_PADDING, y: FLOAT_PADDING };
+  return {
+    x: Math.max(window.innerWidth - FLOAT_WIDTH - FLOAT_PADDING * 2, FLOAT_PADDING),
+    y: Math.max(window.innerHeight - FLOAT_HEIGHT - FLOAT_PADDING * 2, FLOAT_PADDING),
+  };
+}
+
 function useDraggable(mode: TutorMode) {
-  const [floatPos, setFloatPos] = useState({ x: -1, y: -1 });
+  const [floatPos, setFloatPos] = useState(getDefaultFloatPos);
   const isDragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    if (mode === 'floating' && floatPos.x === -1) {
-      setFloatPos({
-        x: Math.max(window.innerWidth - FLOAT_WIDTH - FLOAT_PADDING * 2, FLOAT_PADDING),
-        y: Math.max(window.innerHeight - FLOAT_HEIGHT - FLOAT_PADDING * 2, FLOAT_PADDING),
-      });
-    }
-  }, [mode, floatPos.x]);
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     if (mode !== 'floating') return;
@@ -172,16 +171,7 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-initialize if we have a saved API key on mount
-  useEffect(() => {
-    const savedKey = (() => { try { return localStorage.getItem('emac_gemini_api_key') || ''; } catch { return ''; } })();
-    if (savedKey.trim()) {
-      initializeChat(savedKey);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const initializeChat = (key: string) => {
+  const initializeChat = useCallback((key: string) => {
     const genAI = new GoogleGenerativeAI(key);
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
@@ -189,14 +179,22 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
     });
     chatRef.current = model.startChat();
     setIsApiKeySet(true);
-    try { localStorage.setItem('emac_gemini_api_key', key); } catch {}
+    try { localStorage.setItem('emac_gemini_api_key', key); } catch { /* localStorage unavailable */ }
     setMessages([
       {
         role: 'assistant',
         content: 'Hello! I\'m your Circuit Analysis tutor. I can help you understand concepts related to resistors, capacitors, inductors, time-domain analysis, Laplace transforms, and s-domain analysis. Ask me anything!'
       }
     ]);
-  };
+  }, []);
+
+  // Auto-initialize if we have a saved API key on mount
+  useEffect(() => {
+    const savedKey = (() => { try { return localStorage.getItem('emac_gemini_api_key') || ''; } catch { return ''; } })();
+    if (savedKey.trim()) {
+      initializeChat(savedKey);
+    }
+  }, [initializeChat]);
 
   const handleSetApiKey = () => {
     if (apiKey.trim()) {
@@ -205,7 +203,7 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
   };
 
   const handleClearApiKey = () => {
-    try { localStorage.removeItem('emac_gemini_api_key'); } catch {}
+    try { localStorage.removeItem('emac_gemini_api_key'); } catch { /* localStorage unavailable */ }
     setApiKey('');
     setIsApiKeySet(false);
     setMessages([]);
@@ -230,7 +228,7 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
       const text = response.text();
 
       setMessages(prev => [...prev, { role: 'assistant', content: text }]);
-    } catch (error) {
+    } catch {
       setMessages(prev => [
         ...prev,
         { role: 'assistant', content: 'Sorry, I encountered an error. Please check your API key and try again.' }
