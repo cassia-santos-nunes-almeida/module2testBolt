@@ -77,6 +77,138 @@ function TheoryTab() {
   );
 }
 
+/** Pole-zero scatter plot on the s-plane (F21). */
+function PoleZeroMap({ poleData, poles }: {
+  poleData: Array<{ x: number; y: number; name: string }>;
+  poles: Array<{ real: number; imag: number }>;
+}) {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h3 className="text-lg font-semibold text-slate-900 mb-4">S-Plane Pole-Zero Map</h3>
+      <div className="bg-slate-50 p-4 rounded-lg">
+        <ResponsiveContainer width="100%" height={350}>
+          <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              type="number"
+              dataKey="x"
+              name="Real"
+              label={{ value: 'Real Axis (\u03C3)', position: 'insideBottom', offset: -10 }}
+              domain={['auto', 'auto']}
+            />
+            <YAxis
+              type="number"
+              dataKey="y"
+              name="Imaginary"
+              label={{ value: 'Imaginary Axis (j\u03C9)', angle: -90, position: 'insideLeft' }}
+              domain={['auto', 'auto']}
+            />
+            <Tooltip
+              cursor={{ strokeDasharray: '3 3' }}
+              content={({ payload }) => <PoleTooltip payload={payload as Array<{ payload: { name: string; x: number; y: number } }>} />}
+            />
+            <ReferenceLine x={0} stroke="#64748b" strokeWidth={2} />
+            <ReferenceLine y={0} stroke="#64748b" strokeWidth={2} />
+            <Scatter
+              name="Poles"
+              data={poleData}
+              fill="#ef4444"
+              shape="cross"
+              line={false}
+            />
+          </ScatterChart>
+        </ResponsiveContainer>
+        <p className="text-xs text-center text-slate-600 mt-2">
+          Red ✕ marks indicate pole locations
+        </p>
+      </div>
+
+      <div className="bg-amber-50 p-4 rounded-lg mt-4 border-l-4 border-amber-500">
+        <h4 className="font-semibold text-amber-900 mb-1">Stability:</h4>
+        <p className="text-sm text-slate-700">
+          {poles.every(p => p.real < 0) ? (
+            <span className="text-green-700 font-semibold">
+              ✓ STABLE — all poles in left half-plane
+            </span>
+          ) : (
+            <span className="text-red-700 font-semibold">
+              ✗ UNSTABLE — poles in right half-plane
+            </span>
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Step response line chart with time constant and damped period markers (F21). */
+function StepResponsePanel({ chartData, timeConstantMs, dampedPeriodMs, effectiveDuration }: {
+  chartData: Array<{ time: number; voltage: number; current: number }>;
+  timeConstantMs: number;
+  dampedPeriodMs: number | null;
+  effectiveDuration: number;
+}) {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h3 className="text-lg font-semibold text-slate-900 mb-4">Step Response (Time Domain)</h3>
+      <div className="bg-slate-50 p-4 rounded-lg">
+        <ResponsiveContainer width="100%" height={350}>
+          <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="time" label={{ value: 'Time (ms)', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'V / mA', angle: -90, position: 'insideLeft' }} />
+            <Tooltip content={({ payload, label }) => <ResponseChartTooltip payload={payload as Array<{ color?: string; name?: string; value?: string | number }>} label={label} />} />
+            <Legend />
+            {/* Time constant marker */}
+            {timeConstantMs <= effectiveDuration * 1000 && (
+              <ReferenceLine
+                x={timeConstantMs}
+                stroke="#16a34a"
+                strokeWidth={1.5}
+                strokeDasharray="6 3"
+                label={{ value: '\u03C4', position: 'top', fill: '#16a34a', fontWeight: 'bold', fontSize: 14 }}
+              />
+            )}
+            {/* Damped period marker */}
+            {dampedPeriodMs && dampedPeriodMs <= effectiveDuration * 1000 && (
+              <ReferenceLine
+                x={dampedPeriodMs}
+                stroke="#7c3aed"
+                strokeWidth={1.5}
+                strokeDasharray="6 3"
+                label={{ value: 'T\u1D48', position: 'top', fill: '#7c3aed', fontWeight: 'bold', fontSize: 13 }}
+              />
+            )}
+            <Line type="monotone" dataKey="voltage" stroke="#3b82f6" name="Voltage" dot={false} strokeWidth={2} />
+            <Line type="monotone" dataKey="current" stroke="#ef4444" name="Current" dot={false} strokeWidth={2} />
+          </LineChart>
+        </ResponsiveContainer>
+        <p className="text-xs text-center text-slate-600 mt-2">
+          Green dashed line = &#964; (1/&#945;){dampedPeriodMs ? ', purple = damped period T\u1D48' : ''}
+        </p>
+      </div>
+
+      {/* Compact analysis metrics */}
+      <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="bg-slate-50 rounded-lg p-3">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Envelope &#964; = 1/&#945;</p>
+          <p className="text-lg font-bold text-green-700 mt-0.5">
+            {timeConstantMs.toFixed(3)} <span className="text-sm font-normal text-slate-500">ms</span>
+          </p>
+        </div>
+        {dampedPeriodMs !== null && (
+          <div className="bg-slate-50 rounded-lg p-3">
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Damped Freq &#969;<sub>d</sub></p>
+            <p className="text-lg font-bold text-engineering-blue-700 mt-0.5">
+              {dampedPeriodMs !== null ? ((2 * Math.PI / (dampedPeriodMs / 1000))).toFixed(2) : '—'} <span className="text-sm font-normal text-slate-500">rad/s</span>
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function InteractiveTab() {
   const [R, setR] = useState(100);
   const [L, setL] = useState(0.1);
@@ -267,121 +399,13 @@ function InteractiveTab() {
 
       {/* ROW 2: Pole-Zero Map + Step Response side-by-side */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Left: Pole-Zero Map */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">S-Plane Pole-Zero Map</h3>
-          <div className="bg-slate-50 p-4 rounded-lg">
-            <ResponsiveContainer width="100%" height={350}>
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  type="number"
-                  dataKey="x"
-                  name="Real"
-                  label={{ value: 'Real Axis (\u03C3)', position: 'insideBottom', offset: -10 }}
-                  domain={['auto', 'auto']}
-                />
-                <YAxis
-                  type="number"
-                  dataKey="y"
-                  name="Imaginary"
-                  label={{ value: 'Imaginary Axis (j\u03C9)', angle: -90, position: 'insideLeft' }}
-                  domain={['auto', 'auto']}
-                />
-                <Tooltip
-                  cursor={{ strokeDasharray: '3 3' }}
-                  content={({ payload }) => <PoleTooltip payload={payload as Array<{ payload: { name: string; x: number; y: number } }>} />}
-                />
-                <ReferenceLine x={0} stroke="#64748b" strokeWidth={2} />
-                <ReferenceLine y={0} stroke="#64748b" strokeWidth={2} />
-                <Scatter
-                  name="Poles"
-                  data={poleData}
-                  fill="#ef4444"
-                  shape="cross"
-                  line={false}
-                />
-              </ScatterChart>
-            </ResponsiveContainer>
-            <p className="text-xs text-center text-slate-600 mt-2">
-              Red ✕ marks indicate pole locations
-            </p>
-          </div>
-
-          <div className="bg-amber-50 p-4 rounded-lg mt-4 border-l-4 border-amber-500">
-            <h4 className="font-semibold text-amber-900 mb-1">Stability:</h4>
-            <p className="text-sm text-slate-700">
-              {poles.every(p => p.real < 0) ? (
-                <span className="text-green-700 font-semibold">
-                  ✓ STABLE — all poles in left half-plane
-                </span>
-              ) : (
-                <span className="text-red-700 font-semibold">
-                  ✗ UNSTABLE — poles in right half-plane
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-
-        {/* Right: Time-domain step response */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Step Response (Time Domain)</h3>
-          <div className="bg-slate-50 p-4 rounded-lg">
-            <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" label={{ value: 'Time (ms)', position: 'insideBottom', offset: -5 }} />
-                <YAxis label={{ value: 'V / mA', angle: -90, position: 'insideLeft' }} />
-                <Tooltip content={({ payload, label }) => <ResponseChartTooltip payload={payload as Array<{ color?: string; name?: string; value?: string | number }>} label={label} />} />
-                <Legend />
-                {/* Time constant marker */}
-                {timeConstantMs <= effectiveDuration * 1000 && (
-                  <ReferenceLine
-                    x={timeConstantMs}
-                    stroke="#16a34a"
-                    strokeWidth={1.5}
-                    strokeDasharray="6 3"
-                    label={{ value: '\u03C4', position: 'top', fill: '#16a34a', fontWeight: 'bold', fontSize: 14 }}
-                  />
-                )}
-                {/* Damped period marker */}
-                {dampedPeriodMs && dampedPeriodMs <= effectiveDuration * 1000 && (
-                  <ReferenceLine
-                    x={dampedPeriodMs}
-                    stroke="#7c3aed"
-                    strokeWidth={1.5}
-                    strokeDasharray="6 3"
-                    label={{ value: 'T\u1D48', position: 'top', fill: '#7c3aed', fontWeight: 'bold', fontSize: 13 }}
-                  />
-                )}
-                <Line type="monotone" dataKey="voltage" stroke="#3b82f6" name="Voltage" dot={false} strokeWidth={2} />
-                <Line type="monotone" dataKey="current" stroke="#ef4444" name="Current" dot={false} strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-            <p className="text-xs text-center text-slate-600 mt-2">
-              Green dashed line = &#964; (1/&#945;){dampedPeriodMs ? ', purple = damped period T\u1D48' : ''}
-            </p>
-          </div>
-
-          {/* Compact analysis metrics */}
-          <div className="grid grid-cols-2 gap-3 mt-4">
-            <div className="bg-slate-50 rounded-lg p-3">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Envelope &#964; = 1/&#945;</p>
-              <p className="text-lg font-bold text-green-700 mt-0.5">
-                {timeConstantMs.toFixed(3)} <span className="text-sm font-normal text-slate-500">ms</span>
-              </p>
-            </div>
-            {dampingType === 'Underdamped' && (
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Damped Freq &#969;<sub>d</sub></p>
-                <p className="text-lg font-bold text-engineering-blue-700 mt-0.5">
-                  {(omega0 * Math.sqrt(1 - zeta * zeta)).toFixed(2)} <span className="text-sm font-normal text-slate-500">rad/s</span>
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+        <PoleZeroMap poleData={poleData} poles={poles} />
+        <StepResponsePanel
+          chartData={chartData}
+          timeConstantMs={timeConstantMs}
+          dampedPeriodMs={dampedPeriodMs}
+          effectiveDuration={effectiveDuration}
+        />
       </div>
     </div>
   );

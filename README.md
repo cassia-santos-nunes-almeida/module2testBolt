@@ -62,9 +62,8 @@ This repo includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) th
 
 **Setup:**
 1. Go to **Settings > Pages** in your GitHub repo
-2. Under **Source**, select **Deploy from a branch**
-3. Select **gh-pages** / **/ (root)** and save
-4. Push to `main` — the workflow builds and deploys automatically
+2. Under **Build and deployment > Source**, select **GitHub Actions**
+3. Push to `main` — the workflow builds and deploys automatically
 
 ## License
 
