@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { MathWrapper } from '../common/MathWrapper';
 import {
   resistanceFormula,
@@ -102,6 +102,25 @@ export function ComponentPhysics() {
   );
 }
 
+/** Shared two-column layout for component sections (F13/F14). */
+function ComponentSectionLayout({ theory, materials, interactive }: {
+  theory: ReactNode;
+  materials: ReactNode;
+  interactive: ReactNode;
+}) {
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-6">
+        <section className="bg-white rounded-lg shadow-md p-6">{theory}</section>
+        <section className="bg-white rounded-lg shadow-md p-6">{materials}</section>
+      </div>
+      <div className="space-y-6">
+        <section className="bg-white rounded-lg shadow-md p-6">{interactive}</section>
+      </div>
+    </div>
+  );
+}
+
 /* ─── RESISTOR ─── */
 function ResistorSection({
   length,
@@ -125,10 +144,8 @@ function ResistorSection({
   const crossR = 8 + Math.sqrt(area * 1e6) * 12; // cross-section radius 8–46
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
-      {/* Left: Theory + Materials */}
-      <div className="space-y-6">
-        <section className="bg-white rounded-lg shadow-md p-6">
+    <ComponentSectionLayout
+      theory={<>
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Theory</h3>
           <p className="text-slate-700 mb-4">
             A resistor opposes the flow of electric current. Resistance depends on the material's
@@ -158,9 +175,8 @@ function ResistorSection({
               <li><MathWrapper formula="A" /> = Cross-sectional area (m&sup2;)</li>
             </ul>
           </div>
-        </section>
-
-        <section className="bg-white rounded-lg shadow-md p-6">
+      </>}
+      materials={<>
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Material Properties</h3>
           <div className="space-y-2">
             {materials.filter(m => m.resistivity).map((material) => (
@@ -176,12 +192,8 @@ function ResistorSection({
               </button>
             ))}
           </div>
-        </section>
-      </div>
-
-      {/* Right: Circuit Symbol → Diagrams → Sliders → Result */}
-      <div className="space-y-6">
-        <section className="bg-white rounded-lg shadow-md p-6">
+      </>}
+      interactive={<>
           {/* 1. Circuit Symbol */}
           <div className="bg-slate-50 p-4 rounded-lg mb-5">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Circuit Symbol</p>
@@ -291,9 +303,8 @@ function ResistorSection({
             <p className="text-sm font-semibold text-red-900 mb-1">Calculated Resistance:</p>
             <p className="text-3xl font-bold text-red-700">{resistance.toFixed(3)} &#937;</p>
           </div>
-        </section>
-      </div>
-    </div>
+      </>}
+    />
   );
 }
 
@@ -328,10 +339,8 @@ function CapacitorSection({
   const cy = 90;
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
-      {/* Left: Theory + Materials */}
-      <div className="space-y-6">
-        <section className="bg-white rounded-lg shadow-md p-6">
+    <ComponentSectionLayout
+      theory={<>
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Theory</h3>
           <p className="text-slate-700 mb-4">
             A capacitor stores energy in an electric field between two conductive plates
@@ -366,9 +375,8 @@ function CapacitorSection({
               <li><MathWrapper formula="d" /> = Separation distance (m)</li>
             </ul>
           </div>
-        </section>
-
-        <section className="bg-white rounded-lg shadow-md p-6">
+      </>}
+      materials={<>
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Dielectric Materials</h3>
           <div className="space-y-2">
             {materials.filter(m => m.permittivity).map((material) => (
@@ -384,12 +392,8 @@ function CapacitorSection({
               </button>
             ))}
           </div>
-        </section>
-      </div>
-
-      {/* Right: Circuit Symbol → Diagrams → Sliders → Result */}
-      <div className="space-y-6">
-        <section className="bg-white rounded-lg shadow-md p-6">
+      </>}
+      interactive={<>
           {/* 1. Circuit Symbol */}
           <div className="bg-slate-50 p-4 rounded-lg mb-5">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Circuit Symbol</p>
@@ -541,9 +545,8 @@ function CapacitorSection({
             <p className="text-sm font-semibold text-green-900 mb-1">Calculated Capacitance:</p>
             <p className="text-3xl font-bold text-green-700">{(capacitance * 1e12).toFixed(2)} pF</p>
           </div>
-        </section>
-      </div>
-    </div>
+      </>}
+    />
   );
 }
 
@@ -574,10 +577,8 @@ function InductorSection({
   const crossR = Math.max(Math.sqrt(area * 10000) * 30, 14); // cross-section radius
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
-      {/* Left: Theory + Materials */}
-      <div className="space-y-6">
-        <section className="bg-white rounded-lg shadow-md p-6">
+    <ComponentSectionLayout
+      theory={<>
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Theory</h3>
           <p className="text-slate-700 mb-4">
             An inductor stores energy in a magnetic field created by current flowing through
@@ -613,9 +614,8 @@ function InductorSection({
               <li><MathWrapper formula="l" /> = Coil length (m)</li>
             </ul>
           </div>
-        </section>
-
-        <section className="bg-white rounded-lg shadow-md p-6">
+      </>}
+      materials={<>
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Core Materials</h3>
           <div className="space-y-2">
             {materials.filter(m => m.permeability).slice(0, 3).map((material) => (
@@ -638,12 +638,8 @@ function InductorSection({
               <span className="text-slate-600 ml-2">&mu; = 6.30e-3 H/m</span>
             </button>
           </div>
-        </section>
-      </div>
-
-      {/* Right: Circuit Symbol → Diagrams → Sliders → Result */}
-      <div className="space-y-6">
-        <section className="bg-white rounded-lg shadow-md p-6">
+      </>}
+      interactive={<>
           {/* 1. Circuit Symbol */}
           <div className="bg-slate-50 p-4 rounded-lg mb-5">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Circuit Symbol</p>
@@ -760,8 +756,7 @@ function InductorSection({
             <p className="text-sm font-semibold text-purple-900 mb-1">Calculated Inductance:</p>
             <p className="text-3xl font-bold text-purple-700">{(inductance * 1000).toFixed(2)} mH</p>
           </div>
-        </section>
-      </div>
-    </div>
+      </>}
+    />
   );
 }

@@ -15,7 +15,7 @@ No test suite is configured yet.
 
 - `src/components/modules/` — Page-level components for each learning module (Overview, ComponentPhysics, TimeDomain, LaplaceTheory, SDomainAnalysis, InteractiveLab)
 - `src/components/layout/` — Layout, Sidebar, ErrorBoundary
-- `src/components/common/` — Shared components (AiTutor, MathWrapper, Tabs)
+- `src/components/common/` — Shared components (AiTutor, CircuitCharts, MathWrapper, Tabs)
 - `src/utils/` — Math/physics calculations (componentMath.ts, circuitSolver.ts), utility helpers (cn.ts)
 - `src/App.tsx` — Main app with React Router
 - `src/main.tsx` — Entry point
@@ -32,4 +32,4 @@ No test suite is configured yet.
 
 ## Deployment
 
-Auto-deploys to GitHub Pages on push to `main` via `.github/workflows/deploy.yml`. Deploys from `gh-pages` branch.
+Auto-deploys to GitHub Pages on push to `main` via `.github/workflows/deploy.yml`. Uses `actions/deploy-pages` (requires Pages source set to "GitHub Actions" in repo settings).
