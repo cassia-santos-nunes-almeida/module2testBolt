@@ -15,6 +15,106 @@ interface AiTutorProps {
   onModeChange: (mode: TutorMode) => void;
 }
 
+const FLOAT_WIDTH = 380;
+const FLOAT_HEIGHT = 520;
+const FLOAT_PADDING = 20;
+
+/** Custom hook for window drag behavior (F4/F5). */
+function useDraggable(mode: TutorMode) {
+  const [floatPos, setFloatPos] = useState({ x: -1, y: -1 });
+  const isDragging = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (mode === 'floating' && floatPos.x === -1) {
+      setFloatPos({
+        x: Math.max(window.innerWidth - FLOAT_WIDTH - FLOAT_PADDING * 2, FLOAT_PADDING),
+        y: Math.max(window.innerHeight - FLOAT_HEIGHT - FLOAT_PADDING * 2, FLOAT_PADDING),
+      });
+    }
+  }, [mode, floatPos.x]);
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    if (mode !== 'floating') return;
+    isDragging.current = true;
+    dragOffset.current = { x: e.clientX - floatPos.x, y: e.clientY - floatPos.y };
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return;
+      setFloatPos({
+        x: Math.max(0, Math.min(window.innerWidth - FLOAT_WIDTH - FLOAT_PADDING, ev.clientX - dragOffset.current.x)),
+        y: Math.max(0, Math.min(window.innerHeight - 100, ev.clientY - dragOffset.current.y)),
+      });
+    };
+
+    const onMouseUp = () => {
+      isDragging.current = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [mode, floatPos]);
+
+  return { floatPos, onMouseDown };
+}
+
+/** API key input prompt shown when no key is configured. */
+function ApiKeyPrompt({ apiKey, onApiKeyChange, onSubmit }: {
+  apiKey: string;
+  onApiKeyChange: (key: string) => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <div className="flex-1 p-6 flex flex-col justify-center items-center gap-4">
+      <Key className="w-12 h-12 text-engineering-blue-600" />
+      <h4 className="text-lg font-semibold text-slate-800">Enter Your API Key</h4>
+      <p className="text-sm text-slate-600 text-center">
+        Get your free API key from{' '}
+        <a
+          href="https://aistudio.google.com/app/apikey"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-engineering-blue-600 underline"
+        >
+          Google AI Studio
+        </a>
+      </p>
+      <input
+        type="password"
+        value={apiKey}
+        onChange={(e) => onApiKeyChange(e.target.value)}
+        placeholder="Paste your Gemini API key"
+        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-engineering-blue-500"
+        onKeyDown={(e) => e.key === 'Enter' && onSubmit()}
+      />
+      <button
+        onClick={onSubmit}
+        disabled={!apiKey.trim()}
+        className="w-full bg-engineering-blue-600 text-white py-2 rounded-lg hover:bg-engineering-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Start Tutoring
+      </button>
+    </div>
+  );
+}
+
+/** Loading dots shown while waiting for AI response. */
+function LoadingDots() {
+  return (
+    <div className="flex justify-start">
+      <div className="bg-slate-100 text-slate-800 p-3 rounded-lg">
+        <div className="flex gap-1">
+          {[0, 150, 300].map(delay => (
+            <div key={delay} className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: `${delay}ms` }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const SYSTEM_INSTRUCTION = `You are a rigorous engineering tutor specializing in circuit analysis. Your role is to help students understand:
 - Component physics (resistors, capacitors, inductors)
 - Constitutive laws: V=IR, I=C(dV/dt), V=L(dI/dt)
@@ -66,17 +166,10 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<ReturnType<ReturnType<GoogleGenerativeAI['getGenerativeModel']>['startChat']> | null>(null);
 
-  // Floating position state
-  const [floatPos, setFloatPos] = useState({ x: -1, y: -1 });
-  const isDragging = useRef(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const { floatPos, onMouseDown: handleMouseDown } = useDraggable(mode);
 
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   // Auto-initialize if we have a saved API key on mount
@@ -87,16 +180,6 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Set default floating position on first float
-  useEffect(() => {
-    if (mode === 'floating' && floatPos.x === -1) {
-      setFloatPos({
-        x: Math.max(window.innerWidth - 420, 20),
-        y: Math.max(window.innerHeight - 560, 20),
-      });
-    }
-  }, [mode, floatPos.x]);
 
   const initializeChat = (key: string) => {
     const genAI = new GoogleGenerativeAI(key);
@@ -156,33 +239,6 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
       setIsLoading(false);
     }
   };
-
-  // Drag handlers for floating mode
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (mode !== 'floating') return;
-    isDragging.current = true;
-    dragOffset.current = {
-      x: e.clientX - floatPos.x,
-      y: e.clientY - floatPos.y,
-    };
-
-    const handleMouseMove = (ev: MouseEvent) => {
-      if (!isDragging.current) return;
-      setFloatPos({
-        x: Math.max(0, Math.min(window.innerWidth - 400, ev.clientX - dragOffset.current.x)),
-        y: Math.max(0, Math.min(window.innerHeight - 100, ev.clientY - dragOffset.current.y)),
-      });
-    };
-
-    const handleMouseUp = () => {
-      isDragging.current = false;
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [mode, floatPos]);
 
   if (mode === 'closed') {
     return null;
@@ -244,36 +300,7 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
 
   // Chat content (shared)
   const chatContent = !isApiKeySet ? (
-    <div className="flex-1 p-6 flex flex-col justify-center items-center gap-4">
-      <Key className="w-12 h-12 text-engineering-blue-600" />
-      <h4 className="text-lg font-semibold text-slate-800">Enter Your API Key</h4>
-      <p className="text-sm text-slate-600 text-center">
-        Get your free API key from{' '}
-        <a
-          href="https://aistudio.google.com/app/apikey"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-engineering-blue-600 underline"
-        >
-          Google AI Studio
-        </a>
-      </p>
-      <input
-        type="password"
-        value={apiKey}
-        onChange={(e) => setApiKey(e.target.value)}
-        placeholder="Paste your Gemini API key"
-        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-engineering-blue-500"
-        onKeyDown={(e) => e.key === 'Enter' && handleSetApiKey()}
-      />
-      <button
-        onClick={handleSetApiKey}
-        disabled={!apiKey.trim()}
-        className="w-full bg-engineering-blue-600 text-white py-2 rounded-lg hover:bg-engineering-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Start Tutoring
-      </button>
-    </div>
+    <ApiKeyPrompt apiKey={apiKey} onApiKeyChange={setApiKey} onSubmit={handleSetApiKey} />
   ) : (
     <>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -307,17 +334,7 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
             </div>
           </div>
         ))}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-slate-100 text-slate-800 p-3 rounded-lg">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
-            </div>
-          </div>
-        )}
+        {isLoading && <LoadingDots />}
         <div ref={messagesEndRef} />
       </div>
 
@@ -349,8 +366,10 @@ export function AiTutor({ mode, onModeChange }: AiTutorProps) {
   if (isFloating) {
     return (
       <div
-        className="fixed z-[100] w-[380px] h-[520px] bg-white rounded-xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
+        className={`fixed z-[100] bg-white rounded-xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden`}
         style={{
+          width: FLOAT_WIDTH,
+          height: FLOAT_HEIGHT,
           left: floatPos.x,
           top: floatPos.y,
         }}
