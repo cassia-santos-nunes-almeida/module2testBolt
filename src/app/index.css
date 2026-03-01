@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@theme {
+  --color-engineering-blue-50: #eff6ff;
+  --color-engineering-blue-100: #dbeafe;
+  --color-engineering-blue-200: #bfdbfe;
+  --color-engineering-blue-300: #93c5fd;
+  --color-engineering-blue-400: #60a5fa;
+  --color-engineering-blue-500: #3b82f6;
+  --color-engineering-blue-600: #2563eb;
+  --color-engineering-blue-700: #1d4ed8;
+  --color-engineering-blue-800: #1e40af;
+  --color-engineering-blue-900: #1e3a8a;
+  --color-engineering-blue-950: #172554;
+
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+body {
+  background-color: rgb(248 250 252);
+  color: rgb(15 23 42);
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+}
+
+h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: rgb(15 23 42);
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: rgb(30 41 59);
+  margin-bottom: 0.75rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: rgb(30 41 59);
+  margin-bottom: 0.5rem;
+}
+
+h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(51 65 85);
+  margin-bottom: 0.5rem;
+}
+
+p {
+  color: rgb(51 65 85);
+  line-height: 1.625;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  background-color: rgb(241 245 249);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  color: rgb(29 78 216);
+}
+
+/* Consistent range slider styling */
+input[type="range"] {
+  cursor: pointer;
+}
+
+/* Smooth scrolling in main content */
+main {
+  scroll-behavior: smooth;
+}
+
+/* Subtle selection color for engineering theme */
+::selection {
+  background-color: rgba(37, 99, 235, 0.15);
+  color: inherit;
+}
